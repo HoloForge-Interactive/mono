@@ -187,7 +187,9 @@ install_custom_handler (const char *handlers, size_t *handler_arg_len)
 void
 mono_runtime_install_handlers (void)
 {
-#ifndef MONO_CROSS_COMPILE
+	// tdelort : removed these seh handlers since they are not implemented in ARM or ARM64
+	// TODO : fix exceptions
+#if !defined(MONO_CROSS_COMPILE) && !defined(TARGET_ARM) && !defined(TARGET_ARM64)
 	win32_seh_init();
 	win32_seh_set_handler(SIGFPE, mono_sigfpe_signal_handler);
 	win32_seh_set_handler(SIGILL, mono_crashing_signal_handler);
@@ -238,7 +240,7 @@ mono_runtime_install_custom_handlers_usage (void)
 void
 mono_runtime_cleanup_handlers (void)
 {
-#ifndef MONO_CROSS_COMPILE
+#if !defined(MONO_CROSS_COMPILE) && !defined(TARGET_ARM) && !defined(TARGET_ARM64)
 	win32_seh_cleanup();
 #endif
 }

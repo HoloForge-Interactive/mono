@@ -15,7 +15,7 @@
 #include <mono/arch/arm64/arm64-codegen.h>
 #include <mono/mini/mini-arm64-gsharedvt.h>
 
-#define MONO_ARCH_CPU_SPEC mono_arm64_cpu_desc
+#define MONO_ARCH_CPU_SPEC mono_arm64_desc
 
 #define MONO_MAX_IREGS 32
 #define MONO_MAX_FREGS 32
@@ -24,11 +24,23 @@
 
 #define MONO_CONTEXT_SET_LLVM_EXC_REG(ctx, exc) do { (ctx)->regs [0] = (gsize)exc; } while (0)
 
+#if _MSC_VER 
+// tdelort : __builtin_frame_address is not supported with MSVC. 
+// This is the one used in mini-amd64 when using MSVC. As expected, it uses _AddressOfReturnAddress
+#define MONO_INIT_CONTEXT_FROM_FUNC(ctx, start_func) do { \
+    guint64 stackptr; \
+	stackptr = ((guint64)_AddressOfReturnAddress () - sizeof (void*));\
+	MONO_CONTEXT_SET_IP ((ctx), (start_func)); \
+	MONO_CONTEXT_SET_BP ((ctx), stackptr); \
+	MONO_CONTEXT_SET_SP ((ctx), stackptr); \
+} while (0)
+#else
 #define MONO_INIT_CONTEXT_FROM_FUNC(ctx,func) do {	\
 		MONO_CONTEXT_SET_BP ((ctx), __builtin_frame_address (0));	\
 		MONO_CONTEXT_SET_SP ((ctx), __builtin_frame_address (0));	\
 		MONO_CONTEXT_SET_IP ((ctx), (func));	\
 	} while (0)
+#endif
 
 #define MONO_ARCH_INIT_TOP_LMF_ENTRY(lmf)
 
@@ -144,7 +156,7 @@ typedef struct {
 #define MONO_ARCH_IMT_REG MONO_ARCH_RGCTX_REG
 #define MONO_ARCH_VTABLE_REG ARMREG_R0
 #define MONO_ARCH_HAVE_GENERALIZED_IMT_TRAMPOLINE 1
-#define MONO_ARCH_USE_SIGACTION 1
+//#define MONO_ARCH_USE_SIGACTION 1 // tdelort : sigaction cannot be used on Windows
 #ifdef HOST_TVOS
 #define MONO_ARCH_HAS_NO_PROPER_MONOCTX 1
 #endif

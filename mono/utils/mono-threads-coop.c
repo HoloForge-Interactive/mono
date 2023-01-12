@@ -211,6 +211,28 @@ typedef struct {
 // Defined in win64.asm
 G_EXTERN_C void
 copy_stack_data_internal_win32_wrapper (MonoThreadInfo *, MonoStackData *, MonoBuiltinUnwindInfo *, CopyStackDataFunc);
+
+#elif TARGET_ARM 
+// tdelort : added ARM and ARM64 support for MSVC since ARM and ARM64 on MSVC doesn't support inline assembly
+// Implementation of __builtin_unwind_init under MSVC, dumping nonvolatile registers into MonoBuiltinUnwindInfo.
+typedef struct {
+	float32x4_t fregs [8]; // tdelort changed here
+	host_mgreg_t gregs [8];
+} MonoBuiltinUnwindInfo;
+
+// Defined in arm.asm
+G_EXTERN_C void
+copy_stack_data_internal_win32_wrapper (MonoThreadInfo *, MonoStackData *, MonoBuiltinUnwindInfo *, CopyStackDataFunc);
+#elif TARGET_ARM64
+// Implementation of __builtin_unwind_init under MSVC, dumping nonvolatile registers into MonoBuiltinUnwindInfo.
+typedef struct {
+	float32x4_t fregs [8]; // q8-q15
+	host_mgreg_t gregs [12]; // x18-x29
+} MonoBuiltinUnwindInfo;
+
+// Defined in arm.asm
+G_EXTERN_C void
+copy_stack_data_internal_win32_wrapper (MonoThreadInfo *, MonoStackData *, MonoBuiltinUnwindInfo *, CopyStackDataFunc);
 #else
 // Implementation of __builtin_unwind_init under MSVC, dumping nonvolatile registers into MonoBuiltinUnwindInfo.
 typedef struct {
@@ -239,7 +261,9 @@ static void
 copy_stack_data (MonoThreadInfo *info, MonoStackData *stackdata_begin)
 {
 	MonoBuiltinUnwindInfo unwind_info_data;
+	g_printerr("ARM ASM : copy_stack_data_internal_win32_wrapper");
 	copy_stack_data_internal_win32_wrapper (info, stackdata_begin, &unwind_info_data, copy_stack_data_internal);
+	g_printerr("ARM ASM END : copy_stack_data_internal_win32_wrapper");
 }
 #else
 static void

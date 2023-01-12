@@ -58,7 +58,12 @@ g_module_open (const gchar *file, GModuleFlags flags)
 		gunichar2 *file16;
 		file16 = u8to16(file); 
 		module->main_module = FALSE;
+#if HOST_UWP // tdelort : UWP support
+		g_warning("LoadLibrary in a UWP context has a more restricted use");
+		module->handle = LoadPackagedLibrary (file16, 0);
+#else
 		module->handle = LoadLibraryW (file16);
+#endif
 		g_free(file16);
 		if (!module->handle) {
 			g_free (module);
@@ -66,8 +71,12 @@ g_module_open (const gchar *file, GModuleFlags flags)
 		}
 			
 	} else {
+#if HOST_UWP // tdelort : UWP support TODO : maybe use getcurrentprocess or the hack with virtualquery ?
+		g_error("GetModuleHandle(NULL) not supported for UWP apps. No workaround found yet");
+#else
 		module->main_module = TRUE;
 		module->handle = GetModuleHandle (NULL);
+#endif
 	}
 
 	return module;

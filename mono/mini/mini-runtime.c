@@ -569,7 +569,10 @@ mono_tramp_info_register_internal (MonoTrampInfo *info, MonoDomain *domain, gboo
 
 #ifdef MONO_ARCH_HAVE_UNWIND_TABLE
 	if (!aot)
-		mono_arch_unwindinfo_install_tramp_unwind_info (info->unwind_ops, info->code, info->code_size);
+	{
+		int old_protect, dummy;
+		mono_arch_unwindinfo_install_tramp_unwind_info(info->unwind_ops, info->code, info->code_size);
+	}
 #endif
 
 	if (!domain) {
@@ -3251,6 +3254,7 @@ mono_llvmonly_runtime_invoke (MonoMethod *method, RuntimeInvokeInfo *info, void 
 static MonoObject*
 mono_jit_runtime_invoke (MonoMethod *method, void *obj, void **params, MonoObject **exc, MonoError *error)
 {
+	g_print("call to mono_jit_runtime_invoke");
 	MonoMethod *invoke, *callee;
 	MonoObject *(*runtime_invoke) (MonoObject *this_obj, void **params, MonoObject **exc, void* compiled_method);
 	MonoDomain *domain = mono_domain_get ();
@@ -3452,9 +3456,17 @@ mono_jit_runtime_invoke (MonoMethod *method, void *obj, void **params, MonoObjec
 	} else {
 		runtime_invoke = (MonoObject *(*)(MonoObject *, void **, MonoObject **, void *))info->runtime_invoke;
 
+#if HOST_UWP // tdelort : see WSA/README.md
+		HFMonoPageProtectionMode old_protect;
+		mono_set_execute_mode(HF_EXECUTE_READ, &old_protect, "mini-runtime.c:mono_jit_runtime_invoke");
 		result = runtime_invoke ((MonoObject *)obj, params, exc, info->compiled_method);
+		mono_set_execute_mode(old_protect, NULL, "mini-runtime.c:mono_jit_runtime_invoke");
+#else
+		result = runtime_invoke ((MonoObject *)obj, params, exc, info->compiled_method);
+#endif
 	}
 	if (catchExcInMonoError && *exc != NULL) {
+		g_printerr("Exception caught in unmanaged code");
 		((MonoException *)(*exc))->caught_in_unmanaged = TRUE;
 		mono_error_set_exception_instance (error, (MonoException*) *exc);
 	}
@@ -4365,7 +4377,6 @@ mini_init (const char *filename, const char *runtime_version)
 {
 	ERROR_DECL (error);
 	MonoDomain *domain;
-
 	MonoRuntimeCallbacks callbacks;
 
 	static const MonoThreadInfoRuntimeCallbacks ticallbacks = {

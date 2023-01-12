@@ -534,6 +534,19 @@ mono_arch_handle_exception (void *ctx, gpointer obj)
 {
 #if defined(MONO_CROSS_COMPILE)
 	g_assert_not_reached ();
+#elif defined(HOST_WIN32) 
+	// tdelort : add support for Windows + ARM64 
+	MonoContext mctx;
+	gboolean result;
+
+	mono_sigctx_to_monoctx(ctx, &mctx);
+
+	result = mono_handle_exception (&mctx, obj);
+	/* restore the context so that returning from the signal handler will invoke
+	 * the catch clause 
+	 */
+	mono_monoctx_to_sigctx (&mctx, ctx);
+	return result;
 #else
 	MonoJitTlsData *jit_tls;
 	void *sigctx = ctx;
@@ -563,6 +576,9 @@ mono_arch_ip_from_context (void *sigctx)
 #ifdef MONO_CROSS_COMPILE
 	g_assert_not_reached ();
 	return NULL;
+#elif defined(HOST_WIN32)
+	// tdelort : Pc register is ip
+	return (gpointer)((CONTEXT*)sigctx)->Pc;
 #else
 	return (gpointer)UCONTEXT_REG_PC (sigctx);
 #endif

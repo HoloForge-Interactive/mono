@@ -524,8 +524,7 @@ mono_amd64_get_exception_trampolines (gboolean aot);
 int
 mono_amd64_get_tls_gs_offset (void);
 
-#if defined(TARGET_WIN32) && !defined(DISABLE_JIT)
-
+#if defined(TARGET_WIN32) && !defined(DISABLE_JIT) // && !defined(HOST_UWP) necessary to build in amd64, might break thing to do this but I haven't tested it a lot
 #define MONO_ARCH_HAVE_UNWIND_TABLE 1
 #define MONO_ARCH_HAVE_CODE_CHUNK_TRACKING 1
 

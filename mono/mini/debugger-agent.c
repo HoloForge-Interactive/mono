@@ -9534,7 +9534,12 @@ create_file_to_check_memory_address (void)
 {
 	if (file_check_valid_memory != -1)
 		return;
+#if HOST_UWP // tdelort : UWP support (CRT function getpid is not supported on UWP)
+
+	char *file_name = g_strdup_printf ("debugger_check_valid_memory.%d", GetCurrentProcessId());
+#else
 	char *file_name = g_strdup_printf ("debugger_check_valid_memory.%d", getpid());
+#endif
 	filename_check_valid_memory = g_build_filename (g_get_tmp_dir (), file_name, (const char*)NULL);
 	file_check_valid_memory = open(filename_check_valid_memory, O_CREAT | O_WRONLY | O_APPEND, S_IWUSR);
 	g_free (file_name);

@@ -2536,7 +2536,6 @@ mono_assembly_request_open (const char *filename, const MonoAssemblyOpenRequest 
 	} else {
 		fname = g_strdup (filename);
 	}
-
 	mono_trace (G_LOG_LEVEL_DEBUG, MONO_TRACE_ASSEMBLY,
 			"Assembly Loader probing location: '%s'.", fname);
 
@@ -4430,7 +4429,6 @@ mono_assembly_load_corlib (const MonoRuntimeInfo *runtime, MonoImageOpenStatus *
 	mono_assembly_request_prepare_open (&req, MONO_ASMCTX_DEFAULT, mono_domain_default_alc (mono_domain_get ()));
 
 	if (corlib) {
-		/* g_print ("corlib already loaded\n"); */
 		return corlib;
 	}
 
@@ -4465,7 +4463,7 @@ mono_assembly_load_corlib (const MonoRuntimeInfo *runtime, MonoImageOpenStatus *
 return_corlib_and_facades:
 	if (corlib)  // FIXME: stop hardcoding 4.5 here
 		default_path [1] = g_strdup_printf ("%s/Facades", corlib->basedir);
-		
+
 	return corlib;
 }
 

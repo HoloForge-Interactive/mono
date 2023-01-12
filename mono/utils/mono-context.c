@@ -517,11 +517,27 @@ mono_monoctx_to_sigctx (MonoContext *mctx, void *ctx)
 #include <mono/utils/mono-context.h>
 #include <mono/utils/ftnptr.h>
 
+// tdelort : adding support for windows CONTEXT on windows
+// basically doing what was done in ARM but changing the sizes and types in memcpy
+// to match those of ARM64 context in mono_sigctx_to_monoctx and mono_monoctx_to_sigctx
+#ifdef HOST_WIN32
+#include <windows.h>
+#endif
+
 void
 mono_sigctx_to_monoctx (void *sigctx, MonoContext *mctx)
 {
 #ifdef MONO_CROSS_COMPILE
 	g_assert_not_reached ();
+#elif defined(HOST_WIN32)
+	CONTEXT *context = (CONTEXT*)sigctx;
+
+	mctx->pc = context->Pc;
+	//mctx->cpsr = context->Cpsr;
+	memcpy (&mctx->regs, &context->X, sizeof (host_mgreg_t) * 31);
+	mctx->regs[ARMREG_SP] = context->Sp;
+	
+	memcpy (&mctx->fregs, &context->V, sizeof (NEON128) * 32);
 #else
 	memcpy (mctx->regs, UCONTEXT_GREGS (sigctx), sizeof (host_mgreg_t) * 31);
 	mctx->pc = UCONTEXT_REG_PC (sigctx);
@@ -554,6 +570,18 @@ mono_monoctx_to_sigctx (MonoContext *mctx, void *sigctx)
 	memcpy (UCONTEXT_GREGS (sigctx), mctx->regs, sizeof (host_mgreg_t) * 31);
 	UCONTEXT_REG_SET_PC (sigctx, (gpointer)mctx->pc);
 	UCONTEXT_REG_SET_SP (sigctx, mctx->regs [ARMREG_SP]);
+#elif defined(HOST_WIN32)
+	CONTEXT *context = (CONTEXT*)sigctx;
+
+	context->Pc = mctx->pc;
+	//context->Cpsr = mctx->cpsr; // There is no Cpsr in Aarch64
+	
+	memcpy (&context->X, &mctx->regs, sizeof (host_mgreg_t) * 31);
+	context->Sp = mctx->regs[ARMREG_SP];
+	
+	// tdelort TODO : store all of em ?
+	/* Why are we only copying 16 registers?! There are 32! */
+	memcpy (&context->V, &mctx->fregs, sizeof (NEON128) * 32);
 #else
 	memcpy (UCONTEXT_GREGS (sigctx), mctx->regs, sizeof (host_mgreg_t) * 31);
 	UCONTEXT_REG_SET_PC (sigctx, mctx->pc);

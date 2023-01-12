@@ -201,7 +201,11 @@ void win32_seh_init()
 		restore_stack = (void (*) (void))get_win32_restore_stack ();
 
 	mono_old_win_toplevel_exception_filter = SetUnhandledExceptionFilter(seh_unhandled_exception_filter);
+//#if HOST_UWP
+//	g_warning("AddVectoredExceptionHandler not supported for UWP apps. No workaround found yet");
+//#else
 	mono_win_vectored_exception_handle = AddVectoredExceptionHandler (1, seh_vectored_exception_handler);
+//#endif
 }
 
 void win32_seh_cleanup()
@@ -210,8 +214,12 @@ void win32_seh_cleanup()
 
 	if (mono_old_win_toplevel_exception_filter) SetUnhandledExceptionFilter(mono_old_win_toplevel_exception_filter);
 
+//#if HOST_UWP
+//	g_error("AddVectoredExceptionHandler not supported for UWP apps. No workaround found yet");
+//#else
 	ret = RemoveVectoredExceptionHandler (mono_win_vectored_exception_handle);
 	g_assert (ret);
+//#endif
 }
 
 void win32_seh_set_handler(int type, MonoW32ExceptionHandler handler)
@@ -1173,6 +1181,13 @@ init_table_no_lock (void)
 
 		// Load functions available on Win8/Win2012Server or later. If running on earlier
 		// systems the below GetProceAddress will fail, this is expected behavior.
+//#if HOST_UWP // tdelort : add UWP support (not sure if this works, see : https://tedwvc.wordpress.com/2013/07/19/finding-the-kernel32-dll-module-handle-in-a-windows-store-app-using-approved-apis/)
+//		MEMORY_BASIC_INFORMATION mbi = {0};
+//		VirtualQuery( VirtualQuery, &mbi, sizeof(mbi) );
+//		HMODULE kernel32dll = (HMODULE)(mbi.AllocationBase);
+//		g_rtl_install_function_table_callback = (RtlInstallFunctionTableCallbackPtr)GetProcAddress (kernel32dll, "RtlInstallFunctionTableCallback");
+//		g_rtl_delete_function_table = (RtlDeleteFunctionTablePtr)GetProcAddress (kernel32dll, "RtlDeleteFunctionTable");
+//#else
 		HMODULE ntdll;
 		if (GetModuleHandleEx (0, L"ntdll.dll", &ntdll)) {
 			g_rtl_add_growable_function_table = (RtlAddGrowableFunctionTablePtr)GetProcAddress (ntdll, "RtlAddGrowableFunctionTable");
@@ -1188,6 +1203,7 @@ init_table_no_lock (void)
 				g_rtl_delete_function_table = (RtlDeleteFunctionTablePtr)GetProcAddress (kernel32dll, "RtlDeleteFunctionTable");
 			}
 		}
+//#endif
 
 		g_dyn_func_table_inited = TRUE;
 	}

@@ -503,6 +503,7 @@ mono_init_internal (const char *filename, const char *exe_filename, const char *
 
 	if (domain)
 		g_assert_not_reached ();
+		
 
 #if defined(HOST_WIN32) && HAVE_API_SUPPORT_WIN32_SET_ERROR_MODE
 	/* Avoid system error message boxes. */
@@ -587,6 +588,7 @@ mono_init_internal (const char *filename, const char *exe_filename, const char *
 			g_print ("WARNING: The runtime version supported by this application is unavailable.\n");
 		g_print ("Using default runtime: %s\n", default_runtime->runtime_version); 
 	}
+	
 
 	/* The selected runtime will be the first one for which there is a mscrolib.dll */
 	GSList *tmp = runtimes;
@@ -598,7 +600,7 @@ mono_init_internal (const char *filename, const char *exe_filename, const char *
 			break;
 		tmp = tmp->next;
 	}
-
+	
 	g_slist_free (runtimes);
 	
 	if ((status != MONO_IMAGE_OK) || (ass == NULL)) {

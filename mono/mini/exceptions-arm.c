@@ -647,6 +647,9 @@ mono_arch_ip_from_context (void *sigctx)
 {
 #ifdef MONO_CROSS_COMPILE
 	g_assert_not_reached ();
+#elif defined(HOST_WIN32)
+	// tdelort : Pc register is ip
+	return (gpointer)((CONTEXT*)sigctx)->Pc;
 #else
 	arm_ucontext *my_uc = (arm_ucontext*)sigctx;
 	return (void*) UCONTEXT_REG_PC (my_uc);

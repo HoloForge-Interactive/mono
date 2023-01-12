@@ -171,7 +171,11 @@ g_get_current_dir (void)
 	
 	do {
 		buffer = g_realloc (buffer, s);
+#if HOST_UWP // tdelort : UWP support
+		r = _getcwd (buffer, s);
+#else
 		r = getcwd (buffer, s);
+#endif
 		fail = (r == NULL && errno == ERANGE);
 		if (fail) {
 			s <<= 1;
