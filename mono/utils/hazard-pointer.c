@@ -74,17 +74,23 @@ static int hazardous_pointer_count;
 int
 mono_thread_small_id_alloc (void)
 {
+	g_printerr("mono_thread_small_id_alloc");
 	int i, id = -1;
 
 	mono_os_mutex_lock (&small_id_mutex);
 
 	if (!small_id_table)
-		small_id_table = mono_bitset_new (1, 0);
+	{
+		g_printerr("small id table is null");
+		small_id_table = mono_bitset_new(1, 0);
+	}
 
 	id = mono_bitset_find_first_unset (small_id_table, small_id_next - 1);
+	g_print("small_id_alloc : oneshot : %d", id);
 	if (id == -1)
 		id = mono_bitset_find_first_unset (small_id_table, -1);
 
+	g_print("small_id_alloc : 2nd try : %d", id);
 	if (id == -1) {
 		MonoBitSet *new_table;
 		if (small_id_table->size * 2 >= (1 << 16))
@@ -96,6 +102,7 @@ mono_thread_small_id_alloc (void)
 		small_id_table = new_table;
 	}
 
+	g_print("small_id_alloc : 3rd try : %d", id);
 	g_assert (!mono_bitset_test_fast (small_id_table, id));
 	mono_bitset_set_fast (small_id_table, id);
 
@@ -157,6 +164,7 @@ mono_thread_small_id_free (int id)
 {
 	/* MonoBitSet operations are not atomic. */
 	mono_os_mutex_lock (&small_id_mutex);
+	g_printerr("mono_thread_small_id_free");
 
 	g_assert (id >= 0 && id < small_id_table->size);
 	g_assert (mono_bitset_test_fast (small_id_table, id));
@@ -188,10 +196,11 @@ MonoThreadHazardPointers*
 mono_hazard_pointer_get (void)
 {
 	int small_id = mono_thread_info_get_small_id ();
+	g_print("mono_hazard_pointer_get small id found is %d", small_id);
 
 	if (small_id < 0) {
 		static MonoThreadHazardPointers emerg_hazard_table;
-		g_warning ("Thread %p may have been prematurely finalized\n", (gpointer) (gsize) mono_native_thread_id_get ());
+		g_warning ("Thread %p may have been prematurely finalized by my hfmono\n", (gpointer) (gsize) mono_native_thread_id_get ());
 		return &emerg_hazard_table;
 	}
 
@@ -403,6 +412,7 @@ mono_thread_hazardous_try_free_some (void)
 void
 mono_thread_smr_init (void)
 {
+	g_printerr("mono_thread_smr_init");
 	int i;
 
 	mono_os_mutex_init (&small_id_mutex);
@@ -410,6 +420,7 @@ mono_thread_smr_init (void)
 
 	for (i = 0; i < HAZARD_TABLE_OVERFLOW; ++i) {
 		int small_id = mono_thread_small_id_alloc ();
+		g_print("thread_smr it %d of %d, small id = %d", i, HAZARD_TABLE_OVERFLOW, small_id);
 		g_assert (small_id == i);
 	}
 }

@@ -1066,8 +1066,8 @@ mono_arch_flush_icache (guint8 *code, gint size)
 	 *	but we should look in details on the implementation I proposed in comments just below since it might
 	 *	actually be required to do such things
 	 */
-	//HANDLE current_proc = GetCurrentProcess();
-	//FlushInstructionCache(current_proc ,code, size);
+	HANDLE current_proc = GetCurrentProcess();
+	FlushInstructionCache(current_proc ,code, size);
 #else
     __builtin___clear_cache ((char*)code, (char*)code + size);
 #endif

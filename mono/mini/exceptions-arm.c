@@ -177,8 +177,11 @@ mono_arm_throw_exception (MonoObject *exc, host_mgreg_t pc, host_mgreg_t sp, hos
 		}
 	}
 	mono_error_assert_ok (error);
+	g_printerr("mono_handle_exception(&ctx, exc);");
 	mono_handle_exception (&ctx, exc);
+	g_printerr("mono_restore_context(&ctx, exc);");
 	mono_restore_context (&ctx);
+	g_printerr("g_assert_not_reached");
 	g_assert_not_reached ();
 }
 

@@ -230,9 +230,9 @@ typedef struct {
 	host_mgreg_t gregs [12]; // x18-x29
 } MonoBuiltinUnwindInfo;
 
-// Defined in arm.asm
+// Defined in arm64.asm
 G_EXTERN_C void
-copy_stack_data_internal_win32_wrapper (MonoThreadInfo *, MonoStackData *, MonoBuiltinUnwindInfo *, CopyStackDataFunc);
+copy_stack_data_internal_win32_wrapper_64 (MonoThreadInfo *, MonoStackData *, MonoBuiltinUnwindInfo *, CopyStackDataFunc);
 #else
 // Implementation of __builtin_unwind_init under MSVC, dumping nonvolatile registers into MonoBuiltinUnwindInfo.
 typedef struct {
@@ -261,9 +261,13 @@ static void
 copy_stack_data (MonoThreadInfo *info, MonoStackData *stackdata_begin)
 {
 	MonoBuiltinUnwindInfo unwind_info_data;
+#if TARGET_ARM64
 	g_printerr("ARM ASM : copy_stack_data_internal_win32_wrapper");
-	copy_stack_data_internal_win32_wrapper (info, stackdata_begin, &unwind_info_data, copy_stack_data_internal);
+	copy_stack_data_internal_win32_wrapper_64 (info, stackdata_begin, &unwind_info_data, copy_stack_data_internal);
 	g_printerr("ARM ASM END : copy_stack_data_internal_win32_wrapper");
+#else
+	copy_stack_data_internal_win32_wrapper (info, stackdata_begin, &unwind_info_data, copy_stack_data_internal);
+#endif
 }
 #else
 static void

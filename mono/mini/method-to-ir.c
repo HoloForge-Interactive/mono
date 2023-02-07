@@ -3000,6 +3000,7 @@ mini_save_cast_details (MonoCompile *cfg, MonoClass *klass, int obj_reg, gboolea
 		tls_get = mono_create_tls_get (cfg, TLS_KEY_JIT_TLS);
 		if (!tls_get) {
 			fprintf (stderr, "error: --debug=casts not supported on this platform.\n.");
+			g_printerr("methodtoir exit %d", __LINE__);
 			exit (1);
 		}
 

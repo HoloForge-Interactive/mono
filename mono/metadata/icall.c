@@ -7286,6 +7286,7 @@ ves_icall_System_Environment_Exit (int result)
 	mono_runtime_quit_internal ();
 
 	/* we may need to do some cleanup here... */
+	g_printerr("icall exit %d", __LINE__);
 	exit (result);
 }
 

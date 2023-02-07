@@ -129,7 +129,16 @@ mono_create_static_rgctx_trampoline (MonoMethod *m, gpointer addr)
 	if (mono_aot_only)
 		res = mono_aot_get_static_rgctx_trampoline (ctx, addr);
 	else
+	{
+#if HOST_UWP // tdelort : see WSA/README.md
+		HFMonoPageProtectionMode old_protect;
+		mono_set_execute_mode(HF_READWRITE, &old_protect, "mini-trampolines.c:mono_create_static_rgctx_trampoline");
 		res = mono_arch_get_static_rgctx_trampoline (mem_manager, ctx, addr);
+		mono_set_execute_mode(old_protect, NULL, "mini-trampolines.c:mono_create_static_rgctx_trampoline");
+#else
+		res = mono_arch_get_static_rgctx_trampoline (mem_manager, ctx, addr);
+#endif
+	}
 
 	mono_domain_lock (domain);
 	/* Duplicates inserted while we didn't hold the lock are OK */
@@ -754,7 +763,7 @@ common_call_trampoline (host_mgreg_t *regs, guint8 *code, MonoMethod *m, MonoVTa
 				no_patch = TRUE;
 			if (!no_patch && mono_method_same_domain(ji, target_ji))
 			{
-#if HOST_UWP // tdelort : see WSA/README.md
+#if HOST_UWP // tdelort : see WSA/README.md // MINI
 				int old_protect, dummy;
 				// TODO : protect everything
 				//HFMonoPageProtectionMode old_protect;

@@ -87,7 +87,7 @@ abort_signal_get (void)
 static int
 suspend_signal_get (void)
 {
-#if defined(HOST_ANDROID)
+#if defined(HOST_ANDROID) && !defined(TARGET_ARM64)
 	return SIGPWR;
 #elif defined (SIGRTMIN)
 	static int suspend_signum = -1;
@@ -106,7 +106,7 @@ suspend_signal_get (void)
 static int
 restart_signal_get (void)
 {
-#if defined(HOST_ANDROID)
+#if defined(HOST_ANDROID) && !defined(TARGET_ARM64)
 	return SIGXCPU;
 #elif defined (SIGRTMIN)
 	static int restart_signum = -1;
@@ -133,6 +133,7 @@ static void
 suspend_signal_handler (int _dummy, siginfo_t *info, void *context)
 {
 	int old_errno = errno;
+	g_printerr(" ------- %s", __PRETTY_FUNCTION__);
 	int hp_save_index = mono_hazard_pointer_save_for_signal_handler ();
 
 	MonoThreadInfo *current = mono_thread_info_current ();
@@ -233,6 +234,7 @@ mono_threads_suspend_init_signals (void)
 	/* add suspend signal */
 	suspend_signal_num = suspend_signal_get ();
 
+	g_printerr("%s", __PRETTY_FUNCTION__);
 	signal_add_handler (suspend_signal_num, suspend_signal_handler, SA_RESTART);
 
 	sigaddset (&signal_set, suspend_signal_num);
@@ -256,6 +258,7 @@ mono_threads_suspend_init_signals (void)
 	/* the difference between abort and suspend here is made by not
 	 * passing SA_RESTART, meaning we won't restart the syscall when
 	 * receiving a signal */
+	g_printerr("%s", __PRETTY_FUNCTION__);
 	signal_add_handler (abort_signal_num, suspend_signal_handler, 0);
 
 	sigaddset (&signal_set, abort_signal_num);
@@ -267,7 +270,7 @@ mono_threads_suspend_init_signals (void)
 	On 32bits arm Android, signals with values >=32 are not usable as their headers ship a broken sigset_t.
 	See 5005c6f3fbc1da584c6a550281689cc23f59fe6d for more details.
 	*/
-#ifdef HOST_ANDROID
+#if defined(HOST_ANDROID) && ! defined(TARGET_ARM64)
 	g_assert (suspend_signal_num < 32);
 	g_assert (restart_signal_num < 32);
 	g_assert (abort_signal_num < 32);

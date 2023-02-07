@@ -102,7 +102,9 @@ mono_os_mutex_lock (mono_mutex_t *mutex)
 {
 	int res;
 
+	//g_printerr("mono_os_mutex_lock(%p {%x})", mutex, mutex->__private);
 	res = pthread_mutex_lock (mutex);
+	//g_printerr("mono_os_mutex_lock -> %d", res);
 	if (G_UNLIKELY (res != 0))
 		g_error ("%s: pthread_mutex_lock failed with \"%s\" (%d)", __func__, g_strerror (res), res);
 }
@@ -112,7 +114,9 @@ mono_os_mutex_trylock (mono_mutex_t *mutex)
 {
 	int res;
 
+	//g_printerr("mono_os_mutex_trylock(%p {%x})", mutex, mutex->__private);
 	res = pthread_mutex_trylock (mutex);
+	//g_printerr("mono_os_mutex_trylock -> %d", res);
 	if (G_UNLIKELY (res != 0 && res != EBUSY))
 		g_error ("%s: pthread_mutex_trylock failed with \"%s\" (%d)", __func__, g_strerror (res), res);
 
@@ -124,7 +128,9 @@ mono_os_mutex_unlock (mono_mutex_t *mutex)
 {
 	int res;
 
+	//g_printerr("mono_os_mutex_unlock(%p {%x})", mutex, mutex->__private);
 	res = pthread_mutex_unlock (mutex);
+	//g_printerr("mono_os_mutex_unlock -> %d", res);
 	if (G_UNLIKELY (res != 0))
 		g_error ("%s: pthread_mutex_unlock failed with \"%s\" (%d)", __func__, g_strerror (res), res);
 }

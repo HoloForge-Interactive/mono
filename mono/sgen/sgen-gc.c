@@ -3208,6 +3208,7 @@ sgen_wbarrier_range_copy (gpointer _dest, gconstpointer _src, int size)
 void
 sgen_gc_collect (int generation)
 {
+	g_printerr("COLLECT");
 	gboolean forced;
 
 	LOCK_GC;

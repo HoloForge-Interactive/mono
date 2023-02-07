@@ -32,7 +32,7 @@
 
 #include <errno.h>
 
-#if defined(HOST_ANDROID) && !defined(TARGET_ARM64) && !defined(TARGET_AMD64)
+#if defined(HOST_ANDROID) && !defined(TARGET_ARM64) && !defined(TARGET_AMD64) && !defined(TARGET_ARM)
 // tkill was deprecated and removed in the recent versions of Android NDK
 #define USE_TKILL_ON_ANDROID 1
 extern int tkill (pid_t tid, int signal);
@@ -253,7 +253,10 @@ mono_native_thread_id_equals (MonoNativeThreadId id1, MonoNativeThreadId id2)
 gboolean
 mono_native_thread_create (MonoNativeThreadId *tid, gpointer func, gpointer arg)
 {
-	return pthread_create (tid, NULL, (void *(*)(void *)) func, arg) == 0;
+	g_printerr("mono_native_thread_create");
+	gboolean b = pthread_create (tid, NULL, (void *(*)(void *)) func, arg) == 0;
+	g_printerr("mono_native_thread_create res %d, tid %l", b, tid);
+	return b;
 }
 
 size_t

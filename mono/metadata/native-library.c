@@ -952,6 +952,7 @@ mono_loader_save_bundled_library (int fd, uint64_t offset, uint64_t size, const 
 	lib = mono_dl_open (file, MONO_DL_LAZY, &err);
 	if (lib == NULL){
 		fprintf (stderr, "Error loading shared library: %s %s\n", file, err);
+		g_printerr("native-library exit %d", __LINE__);
 		exit (1);
 	}
 	// Register the name with "." as this is how it will be found when embedded

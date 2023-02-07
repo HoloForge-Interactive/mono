@@ -1887,6 +1887,7 @@ process_create (const gunichar2 *appname, const gunichar2 *cmdline,
 		/* set cwd */
 		if (dir != NULL && chdir (dir) == -1) {
 			/* set error */
+			g_printerr("proc-unix exit %d", __LINE__);
 			_exit (-1);
 		}
 
@@ -1894,6 +1895,7 @@ process_create (const gunichar2 *appname, const gunichar2 *cmdline,
 		execve (argv[0], argv, env_strings);
 
 		/* set error */
+		g_printerr("proc-unix exit %d", __LINE__);
 		_exit (-1);
 
 		break;

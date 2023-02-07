@@ -394,7 +394,7 @@ typedef struct MonoCompileArch {
 
 // Does the ABI have a volatile non-parameter register, so tailcall
 // can pass context to generics or interfaces?
-#define MONO_ARCH_HAVE_VOLATILE_NON_PARAM_REGISTER 0
+#define MONO_ARCH_HAVE_VOLATILE_NON_PARAM_REGISTER 1 // tdelort : yes, in MSVC the r12 is volatile and not a parameter register
 
 #define MONO_CONTEXT_SET_LLVM_EXC_REG(ctx, exc) do { (ctx)->regs [0] = (gsize)exc; } while (0)
 

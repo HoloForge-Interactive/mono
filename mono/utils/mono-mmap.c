@@ -268,6 +268,7 @@ mono_setmmapjit (int flag)
 void*
 mono_valloc (void *addr, size_t length, int flags, MonoMemAccountType type)
 {
+	g_print("Mono VALLOC at %p, size %llu, flags %d", addr, length, flags);
 	void *ptr;
 	int mflags = 0;
 	int prot = prot_from_flags (flags);
@@ -320,6 +321,7 @@ mono_valloc (void *addr, size_t length, int flags, MonoMemAccountType type)
 	BEGIN_CRITICAL_SECTION;
 	ptr = mmap (addr, length, prot, mflags, -1, 0);
 	if (ptr == MAP_FAILED) {
+		g_printerr("MAP FAILED 1");
 		int fd = open ("/dev/zero", O_RDONLY);
 		if (fd != -1) {
 			ptr = mmap (addr, length, prot, mflags, fd, 0);
@@ -329,7 +331,10 @@ mono_valloc (void *addr, size_t length, int flags, MonoMemAccountType type)
 	END_CRITICAL_SECTION;
 
 	if (ptr == MAP_FAILED)
+	{
+		g_printerr("MAP FAILED 2");
 		return NULL;
+	}
 
 	mono_account_mem (type, (ssize_t)length);
 

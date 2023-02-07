@@ -90,6 +90,21 @@ mono_trace (GLogLevelFlags level, MonoTraceMask mask, const char *format, ...)
 		mono_tracev_inner (level, mask, format, args);
 		va_end (args);
 	}
+	else
+	{
+		char *msg;
+		va_list args;
+
+		va_start (args, format);
+		if (g_vasprintf (&msg, format, args) < 0) {
+			va_end (args);
+			return;
+		}
+		va_end (args);
+
+		g_printerr (msg);
+		g_free (msg);
+	}
 }
 
 // __VA_ARGS__ is never empty, so a comma before it is always correct.

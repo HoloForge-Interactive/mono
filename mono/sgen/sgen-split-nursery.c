@@ -390,6 +390,7 @@ handle_gc_param (const char *opt)
 		int percentage = atoi (arg);
 		if (percentage < 1 || percentage > 100) {
 			fprintf (stderr, "alloc-ratio must be an integer in the range 1-100.\n");
+			g_printerr("sgen-split-nursery exit %d", __LINE__);
 			exit (1);
 		}
 		alloc_ratio = (float)percentage / 100.0f;
@@ -401,6 +402,7 @@ handle_gc_param (const char *opt)
 		promote_age = atoi (arg);
 		if (promote_age < 1 || promote_age >= MAX_AGE) {
 			fprintf (stderr, "promotion-age must be an integer in the range 1-%d.\n", MAX_AGE - 1);
+			g_printerr("sgen-split-nursery exit %d", __LINE__);
 			exit (1);
 		}
 		return TRUE;

@@ -2574,6 +2574,7 @@ mono_assembly_request_open (const char *filename, const MonoAssemblyOpenRequest 
 			    "Assembly Loader shadow-copied assembly to: '%s'.", fname);
 	}
 	
+	g_printerr("fname %s", fname);
 	image = NULL;
 
 	const gboolean refonly = load_req.asmctx == MONO_ASMCTX_REFONLY;
@@ -2595,13 +2596,16 @@ mono_assembly_request_open (const char *filename, const MonoAssemblyOpenRequest 
 	if (!image)
 		image = mono_image_open_a_lot (load_req.alc, fname, status, refonly, load_from_context);
 
+	g_printerr("image %p", image);
 	if (!image){
 		if (*status == MONO_IMAGE_OK)
 			*status = MONO_IMAGE_ERROR_ERRNO;
 		g_free (fname);
+		g_printerr("kaput NULL");
 		return NULL;
 	}
 
+	g_printerr("image2 %p", image);
 	if (load_req.asmctx == MONO_ASMCTX_LOADFROM || load_req.asmctx == MONO_ASMCTX_INDIVIDUAL) {
 		MonoAssembly *redirected_asm = NULL;
 		MonoImageOpenStatus new_status = MONO_IMAGE_OK;

@@ -47,14 +47,16 @@ typedef __m128d MonoContextSimdReg;
 #elif defined(TARGET_ARM64)
 #define MONO_HAVE_SIMD_REG
 // tdelort : added to be able to build genmdesc on x64 arch while TARGET ARM64 is defined
-#ifdef GENMDESC
+#if defined(GENMDESC)
 #include <emmintrin.h>
 typedef __m128d MonoContextSimdReg;
-#else
+#elif defined(_MSC_VER)
 // tdelort : __uint128_t doesn't seem to exist on MSVC/ARM64, using __n128 from arm64_neon.h instead
 #include <arm64_neon.h>
 //typedef __uint128_t MonoContextSimdReg;
 typedef __n128 MonoContextSimdReg;
+#else
+typedef __uint128_t MonoContextSimdReg;
 #endif
 #endif
 
@@ -563,9 +565,10 @@ typedef struct {
 
 /* msvc doesn't support inline assembly for asm64, so have to use a separate .asm file */
 // G_EXTERN_C due to being written in assembly.
-G_EXTERN_C void mono_get_ctx (void *);
-G_EXTERN_C host_mgreg_t mono_get_x0 ();
-G_EXTERN_C void mono_set_x0 (host_mgreg_t);
+G_EXTERN_C void mono_get_gregs_64 (void *);
+G_EXTERN_C void mono_get_fregs_64 (void *);
+G_EXTERN_C host_mgreg_t mono_get_x0_64 ();
+G_EXTERN_C void mono_set_x0_64 (host_mgreg_t);
 /*
  * Very similar to the ARM version, except we also get q registers (we should probably do this in the ARM version but it
  * was not originally done in mono so it might not be vital).
@@ -573,14 +576,23 @@ G_EXTERN_C void mono_set_x0 (host_mgreg_t);
  */
 #define MONO_CONTEXT_GET_CURRENT(ctx) \
 do { \
-	host_mgreg_t regs[64];	/* x0-x31 q0-q31 pc */	\
-	host_mgreg_t reg0 = mono_get_x0();		\
-	mono_get_ctx((void*)&ctx);			\
-	ctx.regs[0] = reg0;				\
+	host_mgreg_t gregs[32];	/* x0-x30 pc */	\
+	MonoContextSimdReg fregs[32];	/* q0-q31 */	\
+	host_mgreg_t reg0 = mono_get_x0_64();	\
+	mono_get_gregs_64((void*)gregs);	\
+	mono_get_fregs_64((void*)fregs);	\
+	ctx.regs[0] = reg0;			\
 /* For a more accurate PC, using LR is better since it will be the return address
-   of the call to mono_get_ctx above */			\
-	ctx.pc = ctx.regs[ARMREG_LR];			\
-	mono_set_x0(reg0);				\
+   of the call to mono_get_ctx above */		\
+	/*ctx.pc = ctx.regs[ARMREG_LR]; TODO	*/	\
+	for (int i = 1; i < 31; i++)		\
+		ctx.regs[i] = gregs[i];		\
+	for (int i = 0; i < 32; i++)		\
+		ctx.fregs[i] = fregs[i];	\
+/* MonoContext contains a reg[32] but x31 does not really exist so we set it to rzr (Cf arm64.asm) */ \
+	ctx.regs[31] = gregs[0];		\
+	ctx.pc = gregs[31];			\
+	mono_set_x0_64(reg0);			\
 } while (0)
 
 #else

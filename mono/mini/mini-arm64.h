@@ -200,7 +200,7 @@ typedef struct {
 
 #else
 
-#define MONO_ARCH_REDZONE_SIZE 0
+#define MONO_ARCH_REDZONE_SIZE 0 // tdelort : set using value in MSDN for ARM64 ABI on Windows
 
 #endif
 

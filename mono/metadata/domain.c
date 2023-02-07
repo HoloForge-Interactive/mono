@@ -492,6 +492,7 @@ mono_domain_create (void)
 static MonoDomain *
 mono_init_internal (const char *filename, const char *exe_filename, const char *runtime_version)
 {
+	g_printerr("domain %d", __LINE__);
 	static MonoDomain *domain = NULL;
 	MonoAssembly *ass = NULL;
 	MonoImageOpenStatus status = MONO_IMAGE_OK;
@@ -501,26 +502,32 @@ mono_init_internal (const char *filename, const char *exe_filename, const char *
 	debug_domain_unload = TRUE;
 #endif
 
+	g_printerr("domain %d", __LINE__);
 	if (domain)
 		g_assert_not_reached ();
 		
+	g_printerr("domain %d", __LINE__);
 
 #if defined(HOST_WIN32) && HAVE_API_SUPPORT_WIN32_SET_ERROR_MODE
 	/* Avoid system error message boxes. */
 	SetErrorMode (SEM_FAILCRITICALERRORS | SEM_NOOPENFILEERRORBOX);
 #endif
 
+	g_printerr("domain %d", __LINE__);
 #ifndef HOST_WIN32
 	mono_w32handle_init ();
+	g_printerr("domain %d", __LINE__);
 	mono_w32handle_namespace_init ();
 #endif
 
+	g_printerr("domain %d", __LINE__);
 	mono_w32mutex_init ();
 	mono_w32semaphore_init ();
 	mono_w32event_init ();
 	mono_w32process_init ();
 	mono_w32file_init ();
 
+	g_printerr("domain %d", __LINE__);
 #ifndef DISABLE_PERFCOUNTERS
 	mono_perfcounters_init ();
 #endif
@@ -532,11 +539,14 @@ mono_init_internal (const char *filename, const char *exe_filename, const char *
 
 	mono_counters_register ("Max HashTable Chain Length", MONO_COUNTER_INT|MONO_COUNTER_METADATA, &mono_g_hash_table_max_chain_length);
 
+	g_printerr("domain %d", __LINE__);
 	mono_gc_base_init ();
 	mono_thread_info_attach ();
 
+	g_printerr("domain %d", __LINE__);
 	mono_coop_mutex_init_recursive (&appdomains_mutex);
 
+	g_printerr("domain %d", __LINE__);
 	mono_metadata_init ();
 	mono_images_init ();
 	mono_assemblies_init ();
@@ -546,11 +556,14 @@ mono_init_internal (const char *filename, const char *exe_filename, const char *
 	mono_runtime_init_tls ();
 	mono_icall_init ();
 
+	g_printerr("domain %d", __LINE__);
 	domain = mono_domain_create ();
 	mono_root_domain = domain;
 
+	g_printerr("domain %d", __LINE__);
 	SET_APPDOMAIN (domain);
 
+	g_printerr("domain %d", __LINE__);
 #if defined(ENABLE_EXPERIMENT_null)
 	if (mono_experiment_enabled (MONO_EXPERIMENT_null))
 		g_warning ("null experiment enabled");
@@ -578,6 +591,7 @@ mono_init_internal (const char *filename, const char *exe_filename, const char *
 			runtimes = g_slist_prepend (runtimes, (gpointer)rt);
 	}
 
+	g_printerr("domain %d", __LINE__);
 	if (runtimes == NULL) {
 		const MonoRuntimeInfo *default_runtime = get_runtime_by_version (DEFAULT_RUNTIME_VERSION);
 		g_assert (default_runtime);
@@ -590,6 +604,7 @@ mono_init_internal (const char *filename, const char *exe_filename, const char *
 	}
 	
 
+	g_printerr("domain %d", __LINE__);
 	/* The selected runtime will be the first one for which there is a mscrolib.dll */
 	GSList *tmp = runtimes;
 	while (tmp != NULL) {
@@ -600,6 +615,7 @@ mono_init_internal (const char *filename, const char *exe_filename, const char *
 			break;
 		tmp = tmp->next;
 	}
+	g_printerr("domain %d", __LINE__);
 	
 	g_slist_free (runtimes);
 	
@@ -607,17 +623,17 @@ mono_init_internal (const char *filename, const char *exe_filename, const char *
 		switch (status){
 		case MONO_IMAGE_ERROR_ERRNO: {
 			char *corlib_file = g_build_filename (mono_assembly_getrootdir (), "mono", current_runtime->framework_version, "mscorlib.dll", (const char*)NULL);
-			g_print ("The assembly mscorlib.dll was not found or could not be loaded.\n");
-			g_print ("It should have been installed in the `%s' directory.\n", corlib_file);
+			g_printerr ("The assembly mscorlib.dll was not found or could not be loaded.\n");
+			g_printerr ("It should have been installed in the `%s' directory.\n", corlib_file);
 			g_free (corlib_file);
 			break;
 		}
 		case MONO_IMAGE_IMAGE_INVALID:
-			g_print ("The file %s/mscorlib.dll is an invalid CIL image\n",
+			g_printerr ("The file %s/mscorlib.dll is an invalid CIL image\n",
 				 mono_assembly_getrootdir ());
 			break;
 		case MONO_IMAGE_MISSING_ASSEMBLYREF:
-			g_print ("Missing assembly reference in %s/mscorlib.dll\n",
+			g_printerr ("Missing assembly reference in %s/mscorlib.dll\n",
 				 mono_assembly_getrootdir ());
 			break;
 		case MONO_IMAGE_OK:
@@ -625,6 +641,7 @@ mono_init_internal (const char *filename, const char *exe_filename, const char *
 			break;
 		}
 		
+		g_printerr("domain exit %d", __LINE__);
 		exit (1);
 	}
 	mono_defaults.corlib = mono_assembly_get_image_internal (ass);
@@ -1050,12 +1067,14 @@ mono_domain_assembly_open_internal (MonoDomain *domain, MonoAssemblyLoadContext 
 	MonoAssemblyOpenRequest req;
 	mono_assembly_request_prepare_open (&req, MONO_ASMCTX_DEFAULT, alc);
 	if (domain != mono_domain_get ()) {
+		g_printerr("domain is not domain");
 		current = mono_domain_get ();
 
 		mono_domain_set_fast (domain, FALSE);
 		ass = mono_assembly_request_open (name, &req, NULL);
 		mono_domain_set_fast (current, FALSE);
 	} else {
+		g_printerr("domain is domain");
 		ass = mono_assembly_request_open (name, &req, NULL);
 	}
 

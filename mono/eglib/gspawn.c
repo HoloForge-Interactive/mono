@@ -300,12 +300,14 @@ g_spawn_command_line_sync (const gchar *command_line,
 
 			arg0 = g_find_program_in_path (argv [0]);
 			if (arg0 == NULL) {
+				g_printerr("g_spawn exit %d", __LINE__);
 				exit (1);
 			}
 			//g_free (argv [0]);
 			argv [0] = arg0;
 		}
 		execv (argv [0], argv);
+		g_printerr("g_spawn exit %d", __LINE__);
 		exit (1); /* TODO: What now? */
 	}
 
@@ -397,6 +399,7 @@ g_spawn_async_with_pipes (const gchar *working_directory,
 		}
 
 		if (pid != 0) {
+			g_printerr("g_spawn exit %d", __LINE__);
 			exit (pid == -1 ? 1 : 0);
 		}  else {
 			gint i;
@@ -424,6 +427,7 @@ g_spawn_async_with_pipes (const gchar *working_directory,
 			if (working_directory && chdir (working_directory) == -1) {
 				int err = errno;
 				NO_INTR (unused, write_all (info_pipe [1], &err, sizeof (int)));
+				g_printerr("g_spawn exit %d", __LINE__);
 				exit (0);
 			}
 
@@ -466,6 +470,7 @@ g_spawn_async_with_pipes (const gchar *working_directory,
 				if (arg0 == NULL) {
 					int err = ENOENT;
 					write_all (info_pipe [1], &err, sizeof (int));
+					g_printerr("g_spawn exit %d", __LINE__);
 					exit (0);
 				}
 			}
@@ -473,6 +478,7 @@ g_spawn_async_with_pipes (const gchar *working_directory,
 			execve (arg0, actual_args, envp);
 			int const err = errno;
 			write_all (info_pipe [1], &err, sizeof (int));
+			g_printerr("g_spawn exit %d", __LINE__);
 			exit (0);
 		}
 	} else if ((flags & G_SPAWN_DO_NOT_REAP_CHILD) == 0) {
