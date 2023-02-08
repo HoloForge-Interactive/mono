@@ -253,9 +253,7 @@ mono_native_thread_id_equals (MonoNativeThreadId id1, MonoNativeThreadId id2)
 gboolean
 mono_native_thread_create (MonoNativeThreadId *tid, gpointer func, gpointer arg)
 {
-	g_printerr("mono_native_thread_create");
 	gboolean b = pthread_create (tid, NULL, (void *(*)(void *)) func, arg) == 0;
-	g_printerr("mono_native_thread_create res %d, tid %l", b, tid);
 	return b;
 }
 

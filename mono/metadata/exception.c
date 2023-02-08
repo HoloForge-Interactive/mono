@@ -1273,7 +1273,6 @@ mono_install_unhandled_exception_hook (MonoUnhandledExceptionFunc func, void *us
 void
 mono_invoke_unhandled_exception_hook (MonoObject *exc)
 {
-	g_printerr("mono_invoke_unhandled_exception_hook");
 	if (unhandled_exception_hook) {
 		unhandled_exception_hook (exc, unhandled_exception_hook_data);
 	} else {
@@ -1305,7 +1304,6 @@ mono_invoke_unhandled_exception_hook (MonoObject *exc)
 #if defined(HOST_IOS)
 		g_assertion_message ("Terminating runtime due to unhandled exception");
 #else
-		g_printerr("domain exit %d", __LINE__);
 		exit (mono_environment_exitcode_get ());
 #endif
 	}

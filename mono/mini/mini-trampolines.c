@@ -763,7 +763,7 @@ common_call_trampoline (host_mgreg_t *regs, guint8 *code, MonoMethod *m, MonoVTa
 				no_patch = TRUE;
 			if (!no_patch && mono_method_same_domain(ji, target_ji))
 			{
-#if HOST_UWP // tdelort : see WSA/README.md // MINI
+#if HOST_UWP // tdelort : see WSA/README.md
 				int old_protect, dummy;
 				// TODO : protect everything
 				//HFMonoPageProtectionMode old_protect;

@@ -4568,7 +4568,6 @@ mono_runtime_set_main_args (int argc, char* argv[])
 		if (utf8_arg == NULL) {
 			g_print ("\nCannot determine the text encoding for argument %d (%s).\n", i, argv [i]);
 			g_print ("Please add the correct encoding to MONO_EXTERNAL_ENCODINGS and try again.\n");
-			g_printerr("object exit %d", __LINE__);
 			exit (-1);
 		}
 
@@ -4618,7 +4617,6 @@ prepare_run_main (MonoMethod *method, int argc, char *argv[])
 			 */
 			g_print ("\nCannot determine the text encoding for the assembly location: %s\n", fullpath);
 			g_print ("Please add the correct encoding to MONO_EXTERNAL_ENCODINGS and try again.\n");
-			g_printerr("object exit %d", __LINE__);
 			exit (-1);
 		}
 
@@ -4629,7 +4627,6 @@ prepare_run_main (MonoMethod *method, int argc, char *argv[])
 		if(utf8_fullpath == NULL) {
 			g_print ("\nCannot determine the text encoding for the assembly location: %s\n", argv[0]);
 			g_print ("Please add the correct encoding to MONO_EXTERNAL_ENCODINGS and try again.\n");
-			g_printerr("object exit %d", __LINE__);
 			exit (-1);
 		}
 	}
@@ -4644,7 +4641,6 @@ prepare_run_main (MonoMethod *method, int argc, char *argv[])
 			/* Ditto the comment about Invalid UTF-8 here */
 			g_print ("\nCannot determine the text encoding for argument %d (%s).\n", i, argv[i]);
 			g_print ("Please add the correct encoding to MONO_EXTERNAL_ENCODINGS and try again.\n");
-			g_printerr("object exit %d", __LINE__);
 			exit (-1);
 		}
 
@@ -4656,7 +4652,6 @@ prepare_run_main (MonoMethod *method, int argc, char *argv[])
 	sig = mono_method_signature_internal (method);
 	if (!sig) {
 		g_print ("Unable to load Main method.\n");
-		g_printerr("object exit %d", __LINE__);
 		exit (-1);
 	}
 
@@ -8655,7 +8650,6 @@ get_native_backtrace (MonoException *exc_raw)
 void
 mono_print_unhandled_exception_internal (MonoObject *exc)
 {
-	g_printerr("mono_print_unhandled_exception_internal");
 	MONO_REQ_GC_UNSAFE_MODE;
 
 	MonoString * str;

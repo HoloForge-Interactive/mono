@@ -200,7 +200,7 @@ typedef struct {
 
 #else
 
-#define MONO_ARCH_REDZONE_SIZE 0 // tdelort : set using value in MSDN for ARM64 ABI on Windows
+#define MONO_ARCH_REDZONE_SIZE 0 // tdelort : if an update of mono ever causes problems, MSDN states that this should be 16 bytes. As of today, this value is not used
 
 #endif
 

@@ -530,7 +530,6 @@ mono_sigctx_to_monoctx (void *sigctx, MonoContext *mctx)
 #ifdef MONO_CROSS_COMPILE
 	g_assert_not_reached ();
 #elif defined(HOST_WIN32)
-	g_printerr("mono_sigctx_to_monoctx");
 	CONTEXT *context = (CONTEXT*)sigctx;
 
 	mctx->pc = context->Pc;
@@ -572,7 +571,6 @@ mono_monoctx_to_sigctx (MonoContext *mctx, void *sigctx)
 	UCONTEXT_REG_SET_PC (sigctx, (gpointer)mctx->pc);
 	UCONTEXT_REG_SET_SP (sigctx, mctx->regs [ARMREG_SP]);
 #elif defined(HOST_WIN32)
-	g_printerr("mono_monoctx_to_sigctx");
 	CONTEXT *context = (CONTEXT*)sigctx;
 
 	context->Pc = mctx->pc;

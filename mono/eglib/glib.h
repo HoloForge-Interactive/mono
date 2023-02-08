@@ -792,7 +792,7 @@ const char *   g_get_assertion_message (void);
 #ifndef DISABLE_ASSERT_MESSAGES
 #ifdef HAVE_C99_SUPPORT
 /* The for (;;) tells gc thats g_error () doesn't return, avoiding warnings */
-#define g_error(format, ...)    do { g_log (G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, format, __VA_ARGS__); /*for (;;);*/ } while (0)
+#define g_error(format, ...)    do { g_log (G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, format, __VA_ARGS__); for (;;); } while (0)
 #define g_critical(format, ...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL, format, __VA_ARGS__)
 #define g_warning(format, ...)  g_log (G_LOG_DOMAIN, G_LOG_LEVEL_WARNING, format, __VA_ARGS__)
 #define g_message(format, ...)  g_log (G_LOG_DOMAIN, G_LOG_LEVEL_MESSAGE, format, __VA_ARGS__)

@@ -2395,7 +2395,6 @@ major_handle_gc_param (const char *opt)
 		int percentage = atoi (arg);
 		if (percentage < 0 || percentage > 100) {
 			fprintf (stderr, "evacuation-threshold must be an integer in the range 0-100.\n");
-			g_printerr("sgen-marksweep exit %d", __LINE__);
 			exit (1);
 		}
 		evacuation_threshold = (float)percentage / 100.0f;

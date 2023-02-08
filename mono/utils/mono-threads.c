@@ -363,7 +363,6 @@ mono_thread_info_lookup (MonoNativeThreadId id)
 
 	if (!mono_lls_find (&thread_list, hp, (uintptr_t)id)) {
 		mono_hazard_pointer_clear_all (hp, -1);
-		g_printerr("Not found using lls find");
 		return NULL;
 	} 
 
@@ -419,10 +418,8 @@ free_thread_info (gpointer mem)
 int
 mono_thread_info_register_small_id (void)
 {
-	g_print("mono_thread_info_register_small_id");
 	int small_id = mono_thread_info_get_small_id ();
 
-	g_print("small_id found is %d", small_id);
 	if (small_id != -1)
 		return small_id;
 
@@ -432,7 +429,6 @@ mono_thread_info_register_small_id (void)
 #else
 	mono_native_tls_set_value (small_id_key, GUINT_TO_POINTER (small_id + 1));
 #endif
-	g_print("new small id is %d", small_id);
 	return small_id;
 }
 
@@ -934,7 +930,6 @@ mono_thread_info_set_inited (void)
 		// Try not to use g_error / g_warning because this machinery used by logging
 		// Don't want to loop back into it.
 		fprintf (stderr, "Global threads inited twice");
-		g_printerr("mono-threads exit %d", __LINE__);
 		exit (1);
 		return;
 	}
@@ -960,7 +955,6 @@ mono_thread_info_cleanup ()
 void
 mono_thread_info_init (size_t info_size)
 {
-	g_printerr("thread_info_init");
 	gboolean res;
 	thread_info_size = info_size;
 	char *sleepLimit;

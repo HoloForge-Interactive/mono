@@ -602,7 +602,6 @@ mono_debug_add_aot_method (MonoDomain *domain, MonoMethod *method, guint8 *code_
 
 	if (!mono_debug_enabled ())
 		return;
-	g_printerr("mono_debug_enabled : debug-mini.c:606");
 
 	if ((method->iflags & METHOD_IMPL_ATTRIBUTE_INTERNAL_CALL) ||
 	    (method->iflags & METHOD_IMPL_ATTRIBUTE_RUNTIME) ||

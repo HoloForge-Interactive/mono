@@ -553,7 +553,6 @@ init_thread (gboolean add_to_lls)
 	 * by the main thread on shutdown.
 	 */
 	if (add_to_lls) {
-		g_printerr("%s", __PRETTY_FUNCTION__);
 		MonoThreadHazardPointers *hp = mono_hazard_pointer_get ();
 		g_assert (mono_lls_insert (&log_profiler.profiler_thread_list, hp, &thread->node) && "Why can't we insert the thread in the LLS?");
 		clear_hazard_pointers (hp);
@@ -1112,7 +1111,6 @@ free_thread (gpointer p)
 static void
 remove_thread (MonoProfilerThread *thread)
 {
-		g_printerr("%s", __PRETTY_FUNCTION__);
 	MonoThreadHazardPointers *hp = mono_hazard_pointer_get ();
 
 	if (mono_lls_remove (&log_profiler.profiler_thread_list, hp, &thread->node))

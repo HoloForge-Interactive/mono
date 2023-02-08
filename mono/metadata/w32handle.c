@@ -153,15 +153,11 @@ mono_w32handle_init (void)
 	if (initialized)
 		return;
 
-	g_printerr("w32handle %d", __LINE__);
 	mono_coop_mutex_init (&scan_mutex);
 
-	g_printerr("w32handle %d", __LINE__);
 	mono_coop_cond_init (&global_signal_cond);
-	g_printerr("w32handle %d", __LINE__);
 	mono_coop_mutex_init (&global_signal_mutex);
 
-	g_printerr("w32handle %d", __LINE__);
 	handles_slots_first = handles_slots_last = g_new0 (MonoW32HandleSlot, 1);
 
 	initialized = TRUE;

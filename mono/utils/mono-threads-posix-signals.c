@@ -133,7 +133,6 @@ static void
 suspend_signal_handler (int _dummy, siginfo_t *info, void *context)
 {
 	int old_errno = errno;
-	g_printerr(" ------- %s", __PRETTY_FUNCTION__);
 	int hp_save_index = mono_hazard_pointer_save_for_signal_handler ();
 
 	MonoThreadInfo *current = mono_thread_info_current ();
@@ -234,7 +233,6 @@ mono_threads_suspend_init_signals (void)
 	/* add suspend signal */
 	suspend_signal_num = suspend_signal_get ();
 
-	g_printerr("%s", __PRETTY_FUNCTION__);
 	signal_add_handler (suspend_signal_num, suspend_signal_handler, SA_RESTART);
 
 	sigaddset (&signal_set, suspend_signal_num);
@@ -258,7 +256,6 @@ mono_threads_suspend_init_signals (void)
 	/* the difference between abort and suspend here is made by not
 	 * passing SA_RESTART, meaning we won't restart the syscall when
 	 * receiving a signal */
-	g_printerr("%s", __PRETTY_FUNCTION__);
 	signal_add_handler (abort_signal_num, suspend_signal_handler, 0);
 
 	sigaddset (&signal_set, abort_signal_num);

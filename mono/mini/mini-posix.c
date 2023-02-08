@@ -318,7 +318,6 @@ MONO_SIG_HANDLER_FUNC (static, profiler_signal_handler)
 
 	mono_atomic_inc_i32 (&profiler_signals_accepted);
 
-	g_printerr(" ------- %s", __PRETTY_FUNCTION__);
 	int hp_save_index = mono_hazard_pointer_save_for_signal_handler ();
 
 	mono_thread_info_set_is_async_context (TRUE);
@@ -783,7 +782,6 @@ mono_runtime_shutdown_stat_profiler (void)
 		}
 
 		// Make sure info can be freed.
-		g_printerr("%s", __PRETTY_FUNCTION__);
 		mono_hazard_pointer_clear (mono_hazard_pointer_get (), 1);
 	}
 #endif
@@ -824,7 +822,6 @@ mono_runtime_setup_stat_profiler (void)
 	profiler_signal = SIGPROF;
 #endif
 
-	g_printerr("%s", __PRETTY_FUNCTION__);
 	add_signal_handler (profiler_signal, profiler_signal_handler, SA_RESTART);
 
 	mono_counters_register ("Sampling signals sent", MONO_COUNTER_UINT | MONO_COUNTER_PROFILER | MONO_COUNTER_MONOTONIC, &profiler_signals_sent);
@@ -1130,7 +1127,6 @@ mono_post_native_crash_handler (const char *signal, MonoContext *mctx, MONO_SIG_
 	if (!crash_chaining) {
 		/*Android abort is a fluke, it doesn't abort, it triggers another segv. */
 #if defined (HOST_ANDROID)
-		g_printerr("mini-posix exit %d", __LINE__);
 		exit (-1);
 #else
 		abort ();
@@ -1257,7 +1253,6 @@ exec:
 	close (commands_handle);
 	execv (argv [0], (char**)argv);
 
-	g_printerr("mini-posix exit %d", __LINE__);
 	_exit (-1);
 #else
 	g_async_safe_printf ("mono_gdb_render_native_backtraces not supported on this platform\n");

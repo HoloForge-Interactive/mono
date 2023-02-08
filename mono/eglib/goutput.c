@@ -54,8 +54,8 @@ g_assert_abort (void)
 	g_printerr("g_assert_abort");
 	if (internal_abort_func)
 		internal_abort_func ();
-	//else
-	//	abort ();
+	else
+		abort ();
 }
 
 gint
@@ -209,8 +209,7 @@ g_assertion_message (const gchar *format, ...)
 
 	va_end (args);
 
-	g_print("EXIT_FAILURE");
-	//exit (EXIT_FAILURE);
+	exit (EXIT_FAILURE);
 }
 
 // Emscriptem emulates varargs, and fails to stack pack multiple outgoing varargs areas,
@@ -276,9 +275,6 @@ android_log (gint log_priority, const gchar *log_domain, const gchar *log_messag
 {
 	gint log_message_len, log_message_p_len;
 	const gchar *log_message_p;
-	
-	// tdelort : log_domain overwrite
-	log_domain = "hfmono";
 
 	log_message_len = strlen (log_message);
 	if (log_message_len <= LOG_MESSAGE_MAX_LEN) {

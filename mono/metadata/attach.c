@@ -438,7 +438,6 @@ ipc_connect (void)
 	res = listen (sock, 16);
 	if (res != 0) {
 		fprintf (stderr, "attach: listen () failed: %s\n", strerror (errno));
-		g_printerr("attach exit %d", __LINE__);
 		exit (1);
 	}
 

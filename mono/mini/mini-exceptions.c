@@ -991,7 +991,6 @@ mono_exception_stacktrace_obj_walk (MonoStackTrace *st, MonoExceptionFrameWalk f
 gboolean
 mono_exception_walk_trace_internal (MonoException *ex, MonoExceptionFrameWalk func, gpointer user_data)
 {
-	g_printerr("mono_exeption_walk_trace_internal");
 	MONO_REQ_GC_UNSAFE_MODE;
 
 	MonoDomain *domain = mono_domain_get ();
@@ -2200,7 +2199,6 @@ remove_wrappers_from_trace (GList **trace_ips_p)
 static void
 setup_stack_trace (MonoException *mono_ex, GSList **dynamic_methods, GList *trace_ips, gboolean remove_wrappers)
 {
-	g_printerr("STACK_TRACE : setup_stack_trace");
 	if (mono_ex) {
 		GList *trace_ips_copy = g_list_copy (trace_ips);
 		if (remove_wrappers)
@@ -3378,7 +3376,6 @@ mono_handle_hard_stack_ovf (MonoJitTlsData *jit_tls, MonoJitInfo *ji, MonoContex
 
 	mono_walk_stack_with_ctx (print_overflow_stack_frame, mctx, MONO_UNWIND_LOOKUP_ACTUAL_METHOD, &ud);
 
-	g_printerr("miniexceptions exit %d", __LINE__);
 	_exit (1);
 }
 
@@ -4008,12 +4005,10 @@ mono_llvm_load_exception (void)
 
 		// FIXME:
 		//MONO_OBJECT_SETREF_INTERNAL (mono_ex, stack_trace, ves_icall_System_Exception_get_trace (mono_ex));
-		g_printerr("STACK_TRACE : //MONO_OBJECT_SETREF_INTERNAL (mono_ex, stack_trace, ves_icall_System_Exception_get_trace (mono_ex));");
 	} else {
 		MONO_OBJECT_SETREF_INTERNAL (mono_ex, trace_ips, mono_array_new_checked (mono_domain_get (), mono_defaults.int_class, 0, error));
 		mono_error_assert_ok (error);
 		MONO_OBJECT_SETREF_INTERNAL (mono_ex, stack_trace, mono_array_new_checked (mono_domain_get (), mono_defaults.stack_frame_class, 0, error));
-		g_printerr("STACK_TRACE : MONO_OBJECT_SETREF_INTERNAL(mono_ex, stack_trace, mono_array_new_checked(mono_domain_get(), mono_defaults.stack_frame_class, 0, error));");
 		mono_error_assert_ok (error);
 	}
 

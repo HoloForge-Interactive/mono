@@ -751,6 +751,7 @@ mono_debug_lookup_source_location (MonoMethod *method, guint32 address, MonoDoma
 
 	if (mono_debug_format == MONO_DEBUG_FORMAT_NONE)
 		return NULL;
+
 	mono_debugger_lock ();
 	minfo = lookup_method (method);
 	if (!minfo || !minfo->handle) {

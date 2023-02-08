@@ -25,9 +25,7 @@ static MonoCoopMutex lock;
 void
 mono_w32handle_namespace_init (void)
 {
-	g_printerr("w32handle-namespace %d", __LINE__);
 	mono_coop_mutex_init (&lock);
-	g_printerr("w32handle-namespace %d", __LINE__);
 }
 
 void

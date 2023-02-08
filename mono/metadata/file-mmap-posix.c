@@ -508,7 +508,7 @@ mono_mmap_flush (void *mmap_handle, MonoError *error)
 #ifdef HAVE_MSYNC
 	if (h)
 		MONO_ENTER_GC_SAFE;
-		msync  (h->address, h->length, MS_SYNC);
+		msync (h->address, h->length, MS_SYNC);
 		MONO_EXIT_GC_SAFE;
 #endif
 }

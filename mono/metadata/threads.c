@@ -94,12 +94,12 @@ mono_native_thread_join_handle (HANDLE thread_handle, gboolean close_handle);
 
 #include "icall-decl.h"
 
-#define THREAD_DEBUG(a) do { a; } while (0)
-//#define THREAD_DEBUG(a)
-#define THREAD_WAIT_DEBUG(a) do { a; } while (0)
-//#define THREAD_WAIT_DEBUG(a)
-#define LIBGC_DEBUG(a) do { a; } while (0)
-//#define LIBGC_DEBUG(a)
+/*#define THREAD_DEBUG(a) do { a; } while (0)*/
+#define THREAD_DEBUG(a)
+/*#define THREAD_WAIT_DEBUG(a) do { a; } while (0)*/
+#define THREAD_WAIT_DEBUG(a)
+/*#define LIBGC_DEBUG(a) do { a; } while (0)*/
+#define LIBGC_DEBUG(a)
 
 #define SPIN_TRYLOCK(i) (mono_atomic_cas_i32 (&(i), 1, 0) == 0)
 #define SPIN_LOCK(i) do { \
@@ -1335,7 +1335,6 @@ static gboolean
 create_thread (MonoThread *thread, MonoInternalThread *internal, MonoObject *start_delegate, MonoThreadStart start_func, gpointer start_func_arg,
 	MonoThreadCreateFlags flags, MonoError *error)
 {
-	g_printerr("create thread called");
 	StartInfo *start_info = NULL;
 	MonoNativeThreadId tid;
 	gboolean ret;
@@ -1416,8 +1415,7 @@ create_thread (MonoThread *thread, MonoInternalThread *internal, MonoObject *sta
 
 	internal->stack_size = (int) stack_set_size;
 
-	THREAD_DEBUG (g_message ("%s: (%" G_GSIZE_FORMAT ") Launching thread %p (%" G_GSIZE_FORMAT ") by my hfmono", __func__, mono_native_thread_id_get (), internal, (gsize)internal->tid));
-	g_printerr("small id of launched thread is %d", internal->small_id);
+	THREAD_DEBUG (g_message ("%s: (%" G_GSIZE_FORMAT ") Launching thread %p (%" G_GSIZE_FORMAT ")", __func__, mono_native_thread_id_get (), internal, (gsize)internal->tid));
 
 	/*
 	 * Wait for the thread to set up its TLS data etc, so
@@ -1771,10 +1769,7 @@ mono_thread_exit (void)
 
 	/* we could add a callback here for embedders to use. */
 	if (mono_thread_get_main() && (thread == mono_thread_get_main()->internal_thread))
-	{
-		g_printerr("threads exit %d", __LINE__);
 		exit(mono_environment_exitcode_get());
-	}
 
 	mono_thread_info_exit (0);
 }
