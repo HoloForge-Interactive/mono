@@ -180,7 +180,14 @@ mono_create_ftnptr_arg_trampoline (gpointer arg, gpointer addr)
 	if (mono_aot_only) {
 		res = mono_aot_get_static_rgctx_trampoline (arg, addr);
 	} else {
+#if HOST_UWP // tdelort : see WSA/README.md
+		HFMonoPageProtectionMode old_protect;
+		mono_set_execute_mode(HF_READWRITE, &old_protect, "mini-trampolines.c:mono_create_ftnptr_arg_trampoline");
 		res = mono_arch_get_static_rgctx_trampoline (mem_manager, arg, addr);
+		mono_set_execute_mode(old_protect, NULL, "mini-trampolines.c:mono_create_ftnptr_arg_trampoline");
+#else
+		res = mono_arch_get_static_rgctx_trampoline (mem_manager, arg, addr);
+#endif
 	}
 #endif
 
@@ -389,6 +396,14 @@ mini_add_method_trampoline (MonoMethod *m, gpointer compiled_method, gboolean ad
 			addr = mono_aot_get_unbox_trampoline (m, addr);
 		} else {
 			unbox_trampolines ++;
+#if HOST_UWP // tdelort : see WSA/README.md
+			HFMonoPageProtectionMode old_protect;
+			mono_set_execute_mode(HF_READWRITE, &old_protect, "mini-trampolines.c:mini_add_method_trampoline");
+			addr = mono_arch_get_unbox_trampoline (m, addr);
+			mono_set_execute_mode(old_protect, NULL, "mini-trampolines.c:mini_add_method_trampoline");
+#else
+			addr = mono_arch_get_unbox_trampoline (m, addr);
+#endif
 			addr = mono_arch_get_unbox_trampoline (m, addr);
 		}
 	}
@@ -1302,7 +1317,14 @@ create_trampoline_code (MonoTrampolineType tramp_type)
 	MonoTrampInfo *info;
 	guchar *code;
 
+#if HOST_UWP // tdelort : see WSA/README.md
+	HFMonoPageProtectionMode old_protect;
+	mono_set_execute_mode(HF_READWRITE, &old_protect, "mini-trampolines.c:create_trampoline_code");
 	code = mono_arch_create_generic_trampoline (tramp_type, &info, FALSE);
+	mono_set_execute_mode(old_protect, NULL, "mini-trampolines.c:create_trampoline_code");
+#else
+	code = mono_arch_create_generic_trampoline (tramp_type, &info, FALSE);
+#endif
 	mono_tramp_info_register (info, NULL);
 
 	return code;
@@ -1731,7 +1753,14 @@ mini_get_single_step_trampoline (void)
 		} else {
 #ifdef MONO_ARCH_HAVE_SDB_TRAMPOLINES
 			MonoTrampInfo *info;
+#if HOST_UWP // tdelort : see WSA/README.md
+			HFMonoPageProtectionMode old_protect;
+			mono_set_execute_mode(HF_READWRITE, &old_protect, "mini-trampolines.c:mini_get_single_step_trampoline");
 			tramp = mono_arch_create_sdb_trampoline (TRUE, &info, FALSE);
+			mono_set_execute_mode(old_protect, NULL, "mini-trampolines.c:mini_get_single_step_trampoline");
+#else
+			tramp = mono_arch_create_sdb_trampoline (TRUE, &info, FALSE);
+#endif
 			mono_tramp_info_register (info, NULL);
 #else
 			tramp = NULL;
@@ -1763,7 +1792,14 @@ mini_get_breakpoint_trampoline (void)
 		} else {
 #ifdef MONO_ARCH_HAVE_SDB_TRAMPOLINES
 			MonoTrampInfo *info;
+#if HOST_UWP // tdelort : see WSA/README.md
+			HFMonoPageProtectionMode old_protect;
+			mono_set_execute_mode(HF_READWRITE, &old_protect, "mini-trampolines.c:mini_get_breakpoint_trampoline");
 			tramp = mono_arch_create_sdb_trampoline (FALSE, &info, FALSE);
+			mono_set_execute_mode(old_protect, NULL, "mini-trampolines.c:mini_get_breakpoint_trampoline");
+#else
+			tramp = mono_arch_create_sdb_trampoline (FALSE, &info, FALSE);
+#endif
 			mono_tramp_info_register (info, NULL);
 #else
 			tramp = NULL;

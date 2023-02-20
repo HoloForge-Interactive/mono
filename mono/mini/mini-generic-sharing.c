@@ -2077,7 +2077,16 @@ mini_get_gsharedvt_wrapper (gboolean gsharedvt_in, gpointer addr, MonoMethodSign
 	if (mono_aot_only)
 		addr = mono_aot_get_gsharedvt_arg_trampoline (info, addr);
 	else
-		addr = mono_arch_get_gsharedvt_arg_trampoline (mono_domain_get (), info, addr);
+	{
+#if HOST_UWP // tdelort : see WSA/README.md
+		HFMonoPageProtectionMode old_protect;
+		mono_set_execute_mode(HF_READWRITE, &old_protect, "mini-generic-sharing.c:mini_get_gsharedvt_wrapper");
+		addr = mono_arch_get_gsharedvt_arg_trampoline(mono_domain_get(), info, addr);
+		mono_set_execute_mode(old_protect, NULL, "mini-generic-sharing.c:mini_get_gsharedvt_wrapper");
+#else
+		addr = mono_arch_get_gsharedvt_arg_trampoline(mono_domain_get(), info, addr);
+#endif
+	}
 
 	mono_atomic_inc_i32 (&gsharedvt_num_trampolines);
 

@@ -2525,7 +2525,17 @@ compile_special (MonoMethod *method, MonoDomain *target_domain, MonoError *error
 			if (mono_ee_features.use_aot_trampolines)
 				mono_aot_get_trampoline_full (is_in ? "gsharedvt_trampoline" : "gsharedvt_out_trampoline", &tinfo);
 			else
-				mono_arch_get_gsharedvt_trampoline (&tinfo, FALSE);
+			{
+
+#if HOST_UWP // tdelort : see WSA/README.md
+				HFMonoPageProtectionMode old_protect;
+				mono_set_execute_mode(HF_READWRITE, &old_protect, "mini-runtime.c:compile_special");
+				mono_arch_get_gsharedvt_trampoline(&tinfo, FALSE);
+				mono_set_execute_mode(old_protect, NULL, "mini-runtime.c:compile_special");
+#else
+				mono_arch_get_gsharedvt_trampoline(&tinfo, FALSE);
+#endif
+			}
 			jinfo = create_jit_info_for_trampoline (method, tinfo);
 			mono_jit_info_table_add (mono_get_root_domain (), jinfo);
 			if (is_in)

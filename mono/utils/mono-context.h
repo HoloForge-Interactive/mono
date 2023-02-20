@@ -47,10 +47,7 @@ typedef __m128d MonoContextSimdReg;
 #elif defined(TARGET_ARM64)
 #define MONO_HAVE_SIMD_REG
 // tdelort : added to be able to build genmdesc on x64 arch while TARGET ARM64 is defined
-#if defined(GENMDESC)
-#include <emmintrin.h>
-typedef __m128d MonoContextSimdReg;
-#elif defined(_MSC_VER)
+#if defined(_MSC_VER)
 // tdelort : __uint128_t doesn't seem to exist on MSVC/ARM64, using __n128 from arm64_neon.h instead
 #include <arm64_neon.h>
 //typedef __uint128_t MonoContextSimdReg;
