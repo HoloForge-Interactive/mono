@@ -2186,7 +2186,13 @@ mono_image_open_a_lot_parameterized (MonoLoadedImages *li, MonoAssemblyLoadConte
 				/* Increment reference count on images loaded outside of the runtime. */
 				fname_utf16 = g_utf8_to_utf16 (absfname, -1, NULL, NULL, NULL);
 				/* The image is already loaded because _CorDllMain removes images from the hash. */
+#if HOST_UWP 
+				// tdelort : If we load a library that is not registered in the appxmanifest, this call will return NULL (and fail on the g_assert below)
+				g_warning("LoadLibrary in a UWP context has a more restricted use");
+				module_handle = LoadPackagedLibrary (fname_utf16, 0);
+#else
 				module_handle = LoadLibrary (fname_utf16);
+#endif
 				g_assert (module_handle == (HMODULE) image->raw_data);
 			}
 			mono_image_addref (image);

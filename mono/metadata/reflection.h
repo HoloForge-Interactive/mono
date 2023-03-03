@@ -169,6 +169,11 @@ MonoType* mono_reflection_type_get_type (MonoReflectionType *reftype);
 
 MONO_API MonoAssembly* mono_reflection_assembly_get_assembly (MonoReflectionAssembly *refassembly);
 
+// HoloForge Functions
+MONO_API MonoClass*
+mono_class_generic_create(MonoClass* gtype, int argc, MonoClass** args);
+// End of HoloForge Functions
+
 MONO_END_DECLS
 
 #endif /* __METADATA_REFLECTION_H__ */

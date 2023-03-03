@@ -87,7 +87,7 @@ abort_signal_get (void)
 static int
 suspend_signal_get (void)
 {
-#if defined(HOST_ANDROID)
+#if defined(HOST_ANDROID) && !defined(TARGET_ARM64)
 	return SIGPWR;
 #elif defined (SIGRTMIN)
 	static int suspend_signum = -1;
@@ -106,7 +106,7 @@ suspend_signal_get (void)
 static int
 restart_signal_get (void)
 {
-#if defined(HOST_ANDROID)
+#if defined(HOST_ANDROID) && !defined(TARGET_ARM64)
 	return SIGXCPU;
 #elif defined (SIGRTMIN)
 	static int restart_signum = -1;
@@ -267,7 +267,7 @@ mono_threads_suspend_init_signals (void)
 	On 32bits arm Android, signals with values >=32 are not usable as their headers ship a broken sigset_t.
 	See 5005c6f3fbc1da584c6a550281689cc23f59fe6d for more details.
 	*/
-#ifdef HOST_ANDROID
+#if defined(HOST_ANDROID) && ! defined(TARGET_ARM64)
 	g_assert (suspend_signal_num < 32);
 	g_assert (restart_signal_num < 32);
 	g_assert (abort_signal_num < 32);

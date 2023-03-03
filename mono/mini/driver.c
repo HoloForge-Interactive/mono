@@ -2523,693 +2523,693 @@ mono_main (int argc, char* argv[])
 			g_free (response_content);
 		} else if (argv [i][0] == '-' && argv [i][1] == '-' && mini_parse_debug_option (argv [i] + 2)) {
 		} else if (strcmp (argv [i], "--use-map-jit") == 0){
-			mono_setmmapjit (TRUE);
-		} else {
-			fprintf (stderr, "Unknown command line option: '%s'\n", argv [i]);
-			return 1;
-		}
+		mono_setmmapjit (TRUE);
+	} else {
+		fprintf (stderr, "Unknown command line option: '%s'\n", argv [i]);
+		return 1;
 	}
+}
 
 #if defined(DISABLE_HW_TRAPS) || defined(MONO_ARCH_DISABLE_HW_TRAPS)
-	// Signal handlers not available
-	{
-		MonoDebugOptions *opt = mini_get_debug_options ();
-		opt->explicit_null_checks = TRUE;
-	}
+// Signal handlers not available
+{
+	MonoDebugOptions *opt = mini_get_debug_options ();
+	opt->explicit_null_checks = TRUE;
+}
 #endif
 
-	if (!argv [i]) {
-		mini_usage ();
-		return 1;
-	}
+if (!argv [i]) {
+	mini_usage ();
+	return 1;
+}
 
 /*
- * XXX: verify if other OSes need it; many platforms seem to have it so that
- * mono_w32process_get_path -> mono_w32process_get_name, and the name is not
- * necessarily a path instead of just the program name
- */
+* XXX: verify if other OSes need it; many platforms seem to have it so that
+* mono_w32process_get_path -> mono_w32process_get_name, and the name is not
+* necessarily a path instead of just the program name
+*/
 #if defined (_AIX)
-	/*
-	 * mono_w32process_get_path on these can only return a name, not a path;
-	 * which may not be good for us if the mono command name isn't on $PATH,
-	 * like in CI scenarios. chances are argv based is fine if we inherited
-	 * the environment variables.
-	 */
-	mono_w32process_set_cli_launcher (argv [0]);
+/*
+ * mono_w32process_get_path on these can only return a name, not a path;
+ * which may not be good for us if the mono command name isn't on $PATH,
+ * like in CI scenarios. chances are argv based is fine if we inherited
+ * the environment variables.
+ */
+mono_w32process_set_cli_launcher (argv [0]);
 #elif !defined(HOST_WIN32) && defined(HAVE_UNISTD_H)
-	/*
-	 * If we are not embedded, use the mono runtime executable to run managed exe's.
-	 */
-	{
-		char *runtime_path;
+/*
+ * If we are not embedded, use the mono runtime executable to run managed exe's.
+ */
+{
+	char *runtime_path;
 
-		runtime_path = mono_w32process_get_path (getpid ());
-		if (runtime_path) {
-			mono_w32process_set_cli_launcher (runtime_path);
-			g_free (runtime_path);
-		}
+	runtime_path = mono_w32process_get_path (getpid ());
+	if (runtime_path) {
+		mono_w32process_set_cli_launcher (runtime_path);
+		g_free (runtime_path);
 	}
+}
 #endif
 
-	if (g_hasenv ("MONO_XDEBUG"))
-		enable_debugging = TRUE;
+if (g_hasenv ("MONO_XDEBUG"))
+	enable_debugging = TRUE;
 
 #ifdef MONO_CROSS_COMPILE
-       if (!mono_compile_aot) {
-		   fprintf (stderr, "This mono runtime is compiled for cross-compiling. Only the --aot option is supported.\n");
-		   exit (1);
-       }
+if (!mono_compile_aot) {
+	   fprintf (stderr, "This mono runtime is compiled for cross-compiling. Only the --aot option is supported.\n");
+	   exit (1);
+}
 #if TARGET_SIZEOF_VOID_P == 4 && (defined(TARGET_ARM64) || defined(TARGET_AMD64)) && !defined(MONO_ARCH_ILP32)
-       fprintf (stderr, "Can't cross-compile on 32-bit platforms to 64-bit architecture.\n");
-       exit (1);
+fprintf (stderr, "Can't cross-compile on 32-bit platforms to 64-bit architecture.\n");
+exit (1);
 #endif
 #endif
 
-	if (mono_compile_aot || action == DO_EXEC || action == DO_DEBUGGER) {
-		g_set_prgname (argv[i]);
-	}
+if (mono_compile_aot || action == DO_EXEC || action == DO_DEBUGGER) {
+	g_set_prgname (argv[i]);
+}
 
-	mono_counters_init ();
+mono_counters_init ();
 
 #ifndef HOST_WIN32
-	mono_w32handle_init ();
+mono_w32handle_init ();
 #endif
 
-	/* Set rootdir before loading config */
-	mono_set_rootdir ();
+/* Set rootdir before loading config */
+mono_set_rootdir ();
 
-	mono_attach_parse_options (attach_options);
+mono_attach_parse_options (attach_options);
 
-	if (trace_options != NULL){
-		/* 
-		 * Need to call this before mini_init () so we can trace methods 
-		 * compiled there too.
-		 */
-		mono_jit_trace_calls = mono_trace_set_options (trace_options);
-		if (mono_jit_trace_calls == NULL)
-			exit (1);
-	}
+if (trace_options != NULL){
+	/* 
+	 * Need to call this before mini_init () so we can trace methods 
+	 * compiled there too.
+	 */
+	mono_jit_trace_calls = mono_trace_set_options (trace_options);
+	if (mono_jit_trace_calls == NULL)
+		exit (1);
+}
 
 #ifdef DISABLE_JIT
-	if (!mono_aot_only && !mono_use_interpreter) {
-		fprintf (stderr, "This runtime has been configured with --enable-minimal=jit, so the --full-aot command line option is required.\n");
-		exit (1);
-	}
+if (!mono_aot_only && !mono_use_interpreter) {
+	fprintf (stderr, "This runtime has been configured with --enable-minimal=jit, so the --full-aot command line option is required.\n");
+	exit (1);
+}
 #endif
 
-	if (action == DO_DEBUGGER) {
-		enable_debugging = TRUE;
-		g_print ("The Mono Debugger is no longer supported.\n");
-		return 1;
-	} else if (enable_debugging)
-		mono_debug_init (MONO_DEBUG_FORMAT_MONO);
+if (action == DO_DEBUGGER) {
+	enable_debugging = TRUE;
+	g_print ("The Mono Debugger is no longer supported.\n");
+	return 1;
+} else if (enable_debugging)
+	mono_debug_init (MONO_DEBUG_FORMAT_MONO);
 
 #ifdef HOST_WIN32
-	if (mixed_mode)
-		mono_load_coree (argv [i]);
+if (mixed_mode)
+	mono_load_coree (argv [i]);
 #endif
 
-	/* Parse gac loading options before loading assemblies. */
-	if (mono_compile_aot || action == DO_EXEC || action == DO_DEBUGGER || action == DO_REGRESSION) {
-		mono_config_parse (config_file);
-	}
+/* Parse gac loading options before loading assemblies. */
+if (mono_compile_aot || action == DO_EXEC || action == DO_DEBUGGER || action == DO_REGRESSION) {
+	mono_config_parse (config_file);
+}
 
-	mono_set_defaults (mini_verbose_level, opt);
-	mono_set_os_args (argc, argv);
+mono_set_defaults (mini_verbose_level, opt);
+mono_set_os_args (argc, argv);
 
-	domain = mini_init (argv [i], forced_version);
+domain = mini_init (argv [i], forced_version);
 
-	mono_gc_set_stack_end (&domain);
+mono_gc_set_stack_end (&domain);
 
-	if (agents) {
-		int i;
+if (agents) {
+	int i;
 
-		for (i = 0; i < agents->len; ++i) {
-			int res = load_agent (domain, (char*)g_ptr_array_index (agents, i));
-			if (res) {
-				g_ptr_array_free (agents, TRUE);
-				mini_cleanup (domain);
-				return 1;
-			}
-		}
-
-		g_ptr_array_free (agents, TRUE);
-	}
-	
-	switch (action) {
-	case DO_SINGLE_METHOD_REGRESSION:
-	case DO_REGRESSION:
-		 return mono_exec_regression_internal (mini_verbose_level, argc -i, argv + i, action == DO_SINGLE_METHOD_REGRESSION);
-
-	case DO_BENCH:
-		if (argc - i != 1 || mname == NULL) {
-			g_print ("Usage: mini --ncompile num --compile method assembly\n");
+	for (i = 0; i < agents->len; ++i) {
+		int res = load_agent (domain, (char*)g_ptr_array_index (agents, i));
+		if (res) {
+			g_ptr_array_free (agents, TRUE);
 			mini_cleanup (domain);
 			return 1;
 		}
-		aname = argv [i];
-		break;
-	case DO_COMPILE:
-		if (argc - i != 1) {
-			mini_usage ();
-			mini_cleanup (domain);
-			return 1;
-		}
-		aname = argv [i];
-		break;
-	case DO_DRAW:
-		if (argc - i != 1 || mname == NULL) {
-			mini_usage ();
-			mini_cleanup (domain);
-			return 1;
-		}
-		aname = argv [i];
-		break;
-	default:
-		if (argc - i < 1) {
-			mini_usage ();
-			mini_cleanup (domain);
-			return 1;
-		}
-		aname = argv [i];
-		break;
 	}
 
-#ifdef MONO_JIT_INFO_TABLE_TEST
-	if (test_jit_info_table)
-		jit_info_table_test (domain);
-#endif
+	g_ptr_array_free (agents, TRUE);
+}
 
-	if (mono_compile_aot && extra_bindings_config_file != NULL) {
-		apply_root_domain_configuration_file_bindings (domain, extra_bindings_config_file);
-	}
+switch (action) {
+case DO_SINGLE_METHOD_REGRESSION:
+case DO_REGRESSION:
+	 return mono_exec_regression_internal (mini_verbose_level, argc -i, argv + i, action == DO_SINGLE_METHOD_REGRESSION);
 
-	MonoAssemblyOpenRequest open_req;
-	mono_assembly_request_prepare_open (&open_req, MONO_ASMCTX_DEFAULT, mono_domain_default_alc (mono_get_root_domain ()));
-	assembly = mono_assembly_request_open (aname, &open_req, &open_status);
-	if (!assembly && !mono_compile_aot) {
-		fprintf (stderr, "Cannot open assembly '%s': %s.\n", aname, mono_image_strerror (open_status));
+case DO_BENCH:
+	if (argc - i != 1 || mname == NULL) {
+		g_print ("Usage: mini --ncompile num --compile method assembly\n");
 		mini_cleanup (domain);
-		return 2;
-	}
-
-	mono_callspec_set_assembly (assembly);
-
-	if (mono_compile_aot || action == DO_EXEC) {
-		const char *error;
-
-		//mono_set_rootdir ();
-
-		error = mono_check_corlib_version ();
-		if (error) {
-			fprintf (stderr, "Corlib not in sync with this runtime: %s\n", error);
-			fprintf (stderr, "Loaded from: %s\n",
-				mono_defaults.corlib? mono_image_get_filename (mono_defaults.corlib): "unknown");
-			fprintf (stderr, "Download a newer corlib or a newer runtime at http://www.mono-project.com/download.\n");
-			exit (1);
-		}
-
-#if defined(HOST_WIN32) && HAVE_API_SUPPORT_WIN32_CONSOLE
-		/* Detach console when executing IMAGE_SUBSYSTEM_WINDOWS_GUI on win32 */
-		if (!enable_debugging && !mono_compile_aot && mono_assembly_get_image_internal (assembly)->image_info->cli_header.nt.pe_subsys_required == IMAGE_SUBSYSTEM_WINDOWS_GUI)
-			FreeConsole ();
-#endif
-
-		main_args.domain = domain;
-		main_args.file = aname;		
-		main_args.argc = argc - i;
-		main_args.argv = argv + i;
-		main_args.opts = opt;
-		main_args.aot_options = aot_options;
-		main_thread_handler (&main_args);
-		mono_thread_manage_internal ();
-
-		mini_cleanup (domain);
-
-		/* Look up return value from System.Environment.ExitCode */
-		i = mono_environment_exitcode_get ();
-		return i;
-	} else if (action == DO_COMPILE) {
-		compile_all_methods (assembly, mini_verbose_level, opt, recompilation_times);
-		mini_cleanup (domain);
-		return 0;
-	} else if (action == DO_DEBUGGER) {
 		return 1;
 	}
-	desc = mono_method_desc_new (mname, 0);
-	if (!desc) {
-		g_print ("Invalid method name %s\n", mname);
+	aname = argv [i];
+	break;
+case DO_COMPILE:
+	if (argc - i != 1) {
+		mini_usage ();
 		mini_cleanup (domain);
-		return 3;
+		return 1;
 	}
-	method = mono_method_desc_search_in_image (desc, mono_assembly_get_image_internal (assembly));
-	if (!method) {
-		g_print ("Cannot find method %s\n", mname);
+	aname = argv [i];
+	break;
+case DO_DRAW:
+	if (argc - i != 1 || mname == NULL) {
+		mini_usage ();
 		mini_cleanup (domain);
-		return 3;
+		return 1;
 	}
+	aname = argv [i];
+	break;
+default:
+	if (argc - i < 1) {
+		mini_usage ();
+		mini_cleanup (domain);
+		return 1;
+	}
+	aname = argv [i];
+	break;
+}
+
+#ifdef MONO_JIT_INFO_TABLE_TEST
+if (test_jit_info_table)
+	jit_info_table_test (domain);
+#endif
+
+if (mono_compile_aot && extra_bindings_config_file != NULL) {
+	apply_root_domain_configuration_file_bindings (domain, extra_bindings_config_file);
+}
+
+MonoAssemblyOpenRequest open_req;
+mono_assembly_request_prepare_open (&open_req, MONO_ASMCTX_DEFAULT, mono_domain_default_alc (mono_get_root_domain ()));
+assembly = mono_assembly_request_open (aname, &open_req, &open_status);
+if (!assembly && !mono_compile_aot) {
+	fprintf (stderr, "Cannot open assembly '%s': %s.\n", aname, mono_image_strerror (open_status));
+	mini_cleanup (domain);
+	return 2;
+}
+
+mono_callspec_set_assembly (assembly);
+
+if (mono_compile_aot || action == DO_EXEC) {
+	const char *error;
+
+	//mono_set_rootdir ();
+
+	error = mono_check_corlib_version ();
+	if (error) {
+		fprintf (stderr, "Corlib not in sync with this runtime: %s\n", error);
+		fprintf (stderr, "Loaded from: %s\n",
+			mono_defaults.corlib? mono_image_get_filename (mono_defaults.corlib): "unknown");
+		fprintf (stderr, "Download a newer corlib or a newer runtime at http://www.mono-project.com/download.\n");
+		exit (1);
+	}
+
+#if defined(HOST_WIN32) && HAVE_API_SUPPORT_WIN32_CONSOLE
+	/* Detach console when executing IMAGE_SUBSYSTEM_WINDOWS_GUI on win32 */
+	if (!enable_debugging && !mono_compile_aot && mono_assembly_get_image_internal (assembly)->image_info->cli_header.nt.pe_subsys_required == IMAGE_SUBSYSTEM_WINDOWS_GUI)
+		FreeConsole ();
+#endif
+
+	main_args.domain = domain;
+	main_args.file = aname;		
+	main_args.argc = argc - i;
+	main_args.argv = argv + i;
+	main_args.opts = opt;
+	main_args.aot_options = aot_options;
+	main_thread_handler (&main_args);
+	mono_thread_manage_internal ();
+
+	mini_cleanup (domain);
+
+	/* Look up return value from System.Environment.ExitCode */
+	i = mono_environment_exitcode_get ();
+	return i;
+} else if (action == DO_COMPILE) {
+	compile_all_methods (assembly, mini_verbose_level, opt, recompilation_times);
+	mini_cleanup (domain);
+	return 0;
+} else if (action == DO_DEBUGGER) {
+	return 1;
+}
+desc = mono_method_desc_new (mname, 0);
+if (!desc) {
+	g_print ("Invalid method name %s\n", mname);
+	mini_cleanup (domain);
+	return 3;
+}
+method = mono_method_desc_search_in_image (desc, mono_assembly_get_image_internal (assembly));
+if (!method) {
+	g_print ("Cannot find method %s\n", mname);
+	mini_cleanup (domain);
+	return 3;
+}
 
 #ifndef DISABLE_JIT
-	MonoCompile *cfg;
-	if (action == DO_DRAW) {
-		int part = 0;
+MonoCompile *cfg;
+if (action == DO_DRAW) {
+	int part = 0;
 
-		switch (mono_graph_options) {
-		case MONO_GRAPH_DTREE:
-			part = 1;
-			opt |= MONO_OPT_LOOP;
-			break;
-		case MONO_GRAPH_CFG_CODE:
-			part = 1;
-			break;
-		case MONO_GRAPH_CFG_SSA:
-			part = 2;
-			break;
-		case MONO_GRAPH_CFG_OPTCODE:
-			part = 3;
-			break;
-		default:
-			break;
+	switch (mono_graph_options) {
+	case MONO_GRAPH_DTREE:
+		part = 1;
+		opt |= MONO_OPT_LOOP;
+		break;
+	case MONO_GRAPH_CFG_CODE:
+		part = 1;
+		break;
+	case MONO_GRAPH_CFG_SSA:
+		part = 2;
+		break;
+	case MONO_GRAPH_CFG_OPTCODE:
+		part = 3;
+		break;
+	default:
+		break;
+	}
+
+	if ((method->iflags & METHOD_IMPL_ATTRIBUTE_INTERNAL_CALL) ||
+		(method->flags & METHOD_ATTRIBUTE_PINVOKE_IMPL)) {
+		MonoMethod *nm;
+		nm = mono_marshal_get_native_wrapper (method, TRUE, FALSE);
+		cfg = mini_method_compile (nm, opt, mono_get_root_domain (), (JitFlags)0, part, -1);
+	}
+	else
+		cfg = mini_method_compile (method, opt, mono_get_root_domain (), (JitFlags)0, part, -1);
+	if ((mono_graph_options & MONO_GRAPH_CFG_SSA) && !(cfg->comp_done & MONO_COMP_SSA)) {
+		g_warning ("no SSA info available (use -O=deadce)");
+		return 1;
+	}
+	mono_draw_graph (cfg, mono_graph_options);
+	mono_destroy_compile (cfg);
+
+} else if (action == DO_BENCH) {
+	if (mini_stats_fd) {
+		const char *n;
+		double no_opt_time = 0.0;
+		GTimer *timer = g_timer_new ();
+		fprintf (mini_stats_fd, "$stattitle = \'Compilations times for %s\';\n", 
+			 mono_method_full_name (method, TRUE));
+		fprintf (mini_stats_fd, "@data = (\n");
+		fprintf (mini_stats_fd, "[");
+		for (i = 0; i < G_N_ELEMENTS (opt_sets); i++) {
+			opt = opt_sets [i];
+			n = mono_opt_descr (opt);
+			if (!n [0])
+				n = "none";
+			fprintf (mini_stats_fd, "\"%s\",", n);
 		}
+		fprintf (mini_stats_fd, "],\n[");
 
-		if ((method->iflags & METHOD_IMPL_ATTRIBUTE_INTERNAL_CALL) ||
-			(method->flags & METHOD_ATTRIBUTE_PINVOKE_IMPL)) {
-			MonoMethod *nm;
-			nm = mono_marshal_get_native_wrapper (method, TRUE, FALSE);
-			cfg = mini_method_compile (nm, opt, mono_get_root_domain (), (JitFlags)0, part, -1);
-		}
-		else
-			cfg = mini_method_compile (method, opt, mono_get_root_domain (), (JitFlags)0, part, -1);
-		if ((mono_graph_options & MONO_GRAPH_CFG_SSA) && !(cfg->comp_done & MONO_COMP_SSA)) {
-			g_warning ("no SSA info available (use -O=deadce)");
-			return 1;
-		}
-		mono_draw_graph (cfg, mono_graph_options);
-		mono_destroy_compile (cfg);
-
-	} else if (action == DO_BENCH) {
-		if (mini_stats_fd) {
-			const char *n;
-			double no_opt_time = 0.0;
-			GTimer *timer = g_timer_new ();
-			fprintf (mini_stats_fd, "$stattitle = \'Compilations times for %s\';\n", 
-				 mono_method_full_name (method, TRUE));
-			fprintf (mini_stats_fd, "@data = (\n");
-			fprintf (mini_stats_fd, "[");
-			for (i = 0; i < G_N_ELEMENTS (opt_sets); i++) {
-				opt = opt_sets [i];
-				n = mono_opt_descr (opt);
-				if (!n [0])
-					n = "none";
-				fprintf (mini_stats_fd, "\"%s\",", n);
-			}
-			fprintf (mini_stats_fd, "],\n[");
-
-			for (i = 0; i < G_N_ELEMENTS (opt_sets); i++) {
-				int j;
-				double elapsed;
-				opt = opt_sets [i];
-				g_timer_start (timer);
-				for (j = 0; j < count; ++j) {
-					cfg = mini_method_compile (method, opt, mono_get_root_domain (), (JitFlags)0, 0, -1);
-					mono_destroy_compile (cfg);
-				}
-				g_timer_stop (timer);
-				elapsed = g_timer_elapsed (timer, NULL);
-				if (!opt)
-					no_opt_time = elapsed;
-				fprintf (mini_stats_fd, "%f, ", elapsed);
-			}
-			fprintf (mini_stats_fd, "]");
-			if (no_opt_time > 0.0) {
-				fprintf (mini_stats_fd, ", \n[");
-				for (i = 0; i < G_N_ELEMENTS (opt_sets); i++) 
-					fprintf (mini_stats_fd, "%f,", no_opt_time);
-				fprintf (mini_stats_fd, "]");
-			}
-			fprintf (mini_stats_fd, ");\n");
-		} else {
-			for (i = 0; i < count; ++i) {
-				if ((method->iflags & METHOD_IMPL_ATTRIBUTE_INTERNAL_CALL) ||
-					(method->flags & METHOD_ATTRIBUTE_PINVOKE_IMPL))
-					method = mono_marshal_get_native_wrapper (method, TRUE, FALSE);
-
+		for (i = 0; i < G_N_ELEMENTS (opt_sets); i++) {
+			int j;
+			double elapsed;
+			opt = opt_sets [i];
+			g_timer_start (timer);
+			for (j = 0; j < count; ++j) {
 				cfg = mini_method_compile (method, opt, mono_get_root_domain (), (JitFlags)0, 0, -1);
 				mono_destroy_compile (cfg);
 			}
+			g_timer_stop (timer);
+			elapsed = g_timer_elapsed (timer, NULL);
+			if (!opt)
+				no_opt_time = elapsed;
+			fprintf (mini_stats_fd, "%f, ", elapsed);
 		}
+		fprintf (mini_stats_fd, "]");
+		if (no_opt_time > 0.0) {
+			fprintf (mini_stats_fd, ", \n[");
+			for (i = 0; i < G_N_ELEMENTS (opt_sets); i++) 
+				fprintf (mini_stats_fd, "%f,", no_opt_time);
+			fprintf (mini_stats_fd, "]");
+		}
+		fprintf (mini_stats_fd, ");\n");
 	} else {
-		cfg = mini_method_compile (method, opt, mono_get_root_domain (), (JitFlags)0, 0, -1);
-		mono_destroy_compile (cfg);
+		for (i = 0; i < count; ++i) {
+			if ((method->iflags & METHOD_IMPL_ATTRIBUTE_INTERNAL_CALL) ||
+				(method->flags & METHOD_ATTRIBUTE_PINVOKE_IMPL))
+				method = mono_marshal_get_native_wrapper (method, TRUE, FALSE);
+
+			cfg = mini_method_compile (method, opt, mono_get_root_domain (), (JitFlags)0, 0, -1);
+			mono_destroy_compile (cfg);
+		}
 	}
+} else {
+	cfg = mini_method_compile (method, opt, mono_get_root_domain (), (JitFlags)0, 0, -1);
+	mono_destroy_compile (cfg);
+}
 #endif
 
-	mini_cleanup (domain);
- 	return 0;
+mini_cleanup (domain);
+return 0;
 }
 
 /**
- * mono_jit_init:
- */
+* mono_jit_init:
+*/
 MonoDomain * 
 mono_jit_init (const char *file)
 {
-	MonoDomain *ret = mini_init (file, NULL);
-	MONO_ENTER_GC_SAFE_UNBALANCED; //once it is not executing any managed code yet, it's safe to run the gc
-	return ret;
+MonoDomain *ret = mini_init (file, NULL);
+MONO_ENTER_GC_SAFE_UNBALANCED; //once it is not executing any managed code yet, it's safe to run the gc
+return ret;
 }
 
 /**
- * mono_jit_init_version:
- * \param domain_name the name of the root domain
- * \param runtime_version the version of the runtime to load
- *
- * Use this version when you want to force a particular runtime
- * version to be used.  By default Mono will pick the runtime that is
- * referenced by the initial assembly (specified in \p file), this
- * routine allows programmers to specify the actual runtime to be used
- * as the initial runtime is inherited by all future assemblies loaded
- * (since Mono does not support having more than one mscorlib runtime
- * loaded at once).
- *
- * The \p runtime_version can be one of these strings: "v4.0.30319" for
- * desktop, "mobile" for mobile or "moonlight" for Silverlight compat.
- * If an unrecognized string is input, the vm will default to desktop.
- *
- * \returns the \c MonoDomain representing the domain where the assembly
- * was loaded.
- */
+* mono_jit_init_version:
+* \param domain_name the name of the root domain
+* \param runtime_version the version of the runtime to load
+*
+* Use this version when you want to force a particular runtime
+* version to be used.  By default Mono will pick the runtime that is
+* referenced by the initial assembly (specified in \p file), this
+* routine allows programmers to specify the actual runtime to be used
+* as the initial runtime is inherited by all future assemblies loaded
+* (since Mono does not support having more than one mscorlib runtime
+* loaded at once).
+*
+* The \p runtime_version can be one of these strings: "v4.0.30319" for
+* desktop, "mobile" for mobile or "moonlight" for Silverlight compat.
+* If an unrecognized string is input, the vm will default to desktop.
+*
+* \returns the \c MonoDomain representing the domain where the assembly
+* was loaded.
+*/
 MonoDomain * 
 mono_jit_init_version (const char *domain_name, const char *runtime_version)
 {
-	MonoDomain *ret = mini_init (domain_name, runtime_version);
-	MONO_ENTER_GC_SAFE_UNBALANCED; //once it is not executing any managed code yet, it's safe to run the gc
-	return ret;
+MonoDomain *ret = mini_init (domain_name, runtime_version);
+MONO_ENTER_GC_SAFE_UNBALANCED; //once it is not executing any managed code yet, it's safe to run the gc
+return ret;
 }
 
 MonoDomain * 
 mono_jit_init_version_for_test_only (const char *domain_name, const char *runtime_version)
 {
-	MonoDomain *ret = mini_init (domain_name, runtime_version);
-	return ret;
+MonoDomain *ret = mini_init (domain_name, runtime_version);
+return ret;
 }
 
 /**
- * mono_jit_cleanup:
- */
+* mono_jit_cleanup:
+*/
 void        
 mono_jit_cleanup (MonoDomain *domain)
 {
-	MONO_STACKDATA (dummy);
-	(void) mono_threads_enter_gc_unsafe_region_unbalanced_internal (&dummy);
+MONO_STACKDATA (dummy);
+(void) mono_threads_enter_gc_unsafe_region_unbalanced_internal (&dummy);
 
-	// after mini_cleanup everything is cleaned up so MONO_EXIT_GC_UNSAFE
-	// can't work and doesn't make sense.
+// after mini_cleanup everything is cleaned up so MONO_EXIT_GC_UNSAFE
+// can't work and doesn't make sense.
 
-	mono_thread_manage_internal ();
+mono_thread_manage_internal ();
 
-	mini_cleanup (domain);
+mini_cleanup (domain);
 
 }
 
 void
 mono_jit_set_aot_only (gboolean val)
 {
-	mono_aot_only = val;
-	mono_ee_features.use_aot_trampolines = val;
+mono_aot_only = val;
+mono_ee_features.use_aot_trampolines = val;
 }
 
 static void
 mono_runtime_set_execution_mode_full (int mode, gboolean override)
 {
-	static gboolean mode_initialized = FALSE;
-	if (mode_initialized && !override)
-		return;
+static gboolean mode_initialized = FALSE;
+if (mode_initialized && !override)
+	return;
 
-	mode_initialized = TRUE;
-	memset (&mono_ee_features, 0, sizeof (mono_ee_features));
+mode_initialized = TRUE;
+memset (&mono_ee_features, 0, sizeof (mono_ee_features));
 
-	switch (mode) {
-	case MONO_AOT_MODE_LLVMONLY:
-		mono_aot_only = TRUE;
-		mono_llvm_only = TRUE;
+switch (mode) {
+case MONO_AOT_MODE_LLVMONLY:
+	mono_aot_only = TRUE;
+	mono_llvm_only = TRUE;
 
-		mono_ee_features.use_aot_trampolines = TRUE;
-		break;
+	mono_ee_features.use_aot_trampolines = TRUE;
+	break;
 
-	case MONO_AOT_MODE_FULL:
-		mono_aot_only = TRUE;
+case MONO_AOT_MODE_FULL:
+	mono_aot_only = TRUE;
 
-		mono_ee_features.use_aot_trampolines = TRUE;
-		break;
+	mono_ee_features.use_aot_trampolines = TRUE;
+	break;
 
-	case MONO_AOT_MODE_HYBRID:
-		mono_set_generic_sharing_vt_supported (TRUE);
-		mono_set_partial_sharing_supported (TRUE);
-		break;
+case MONO_AOT_MODE_HYBRID:
+	mono_set_generic_sharing_vt_supported (TRUE);
+	mono_set_partial_sharing_supported (TRUE);
+	break;
 
-	case MONO_AOT_MODE_INTERP:
-		mono_aot_only = TRUE;
-		mono_use_interpreter = TRUE;
+case MONO_AOT_MODE_INTERP:
+	mono_aot_only = TRUE;
+	mono_use_interpreter = TRUE;
 
-		mono_ee_features.use_aot_trampolines = TRUE;
-		break;
+	mono_ee_features.use_aot_trampolines = TRUE;
+	break;
 
-	case MONO_AOT_MODE_INTERP_LLVMONLY:
-		mono_aot_only = TRUE;
-		mono_use_interpreter = TRUE;
-		mono_llvm_only = TRUE;
+case MONO_AOT_MODE_INTERP_LLVMONLY:
+	mono_aot_only = TRUE;
+	mono_use_interpreter = TRUE;
+	mono_llvm_only = TRUE;
 
-		mono_ee_features.force_use_interpreter = TRUE;
-		break;
+	mono_ee_features.force_use_interpreter = TRUE;
+	break;
 
-	case MONO_AOT_MODE_LLVMONLY_INTERP:
-		mono_aot_only = TRUE;
-		mono_use_interpreter = TRUE;
-		mono_llvm_only = TRUE;
-		break;
+case MONO_AOT_MODE_LLVMONLY_INTERP:
+	mono_aot_only = TRUE;
+	mono_use_interpreter = TRUE;
+	mono_llvm_only = TRUE;
+	break;
 
-	case MONO_AOT_MODE_INTERP_ONLY:
-		mono_check_interp_supported ();
-		mono_use_interpreter = TRUE;
+case MONO_AOT_MODE_INTERP_ONLY:
+	mono_check_interp_supported ();
+	mono_use_interpreter = TRUE;
 
-		mono_ee_features.force_use_interpreter = TRUE;
-		break;
+	mono_ee_features.force_use_interpreter = TRUE;
+	break;
 
-	case MONO_AOT_MODE_NORMAL:
-	case MONO_AOT_MODE_NONE:
-		break;
+case MONO_AOT_MODE_NORMAL:
+case MONO_AOT_MODE_NONE:
+	break;
 
-	default:
-		g_error ("Unknown execution-mode %d", mode);
-	}
+default:
+	g_error ("Unknown execution-mode %d", mode);
+}
 
 }
 
 static void
 mono_runtime_set_execution_mode (int mode)
 {
-	mono_runtime_set_execution_mode_full (mode, TRUE);
+mono_runtime_set_execution_mode_full (mode, TRUE);
 }
 
 /**
- * mono_jit_set_aot_mode:
- */
+* mono_jit_set_aot_mode:
+*/
 void
 mono_jit_set_aot_mode (MonoAotMode mode)
 {
-	/* we don't want to set mono_aot_mode twice */
-	static gboolean inited;
+/* we don't want to set mono_aot_mode twice */
+static gboolean inited;
 
-	g_assert (!inited);
-	mono_aot_mode = mode;
-	inited = TRUE;
-	
-	mono_runtime_set_execution_mode (mode);
+g_assert (!inited);
+mono_aot_mode = mode;
+inited = TRUE;
+
+mono_runtime_set_execution_mode (mode);
 }
 
 mono_bool
 mono_jit_aot_compiling (void)
 {
-	return mono_compile_aot;
+return mono_compile_aot;
 }
 
 /**
- * mono_jit_set_trace_options:
- * \param options string representing the trace options
- * Set the options of the tracing engine. This function can be called before initializing
- * the mono runtime. See the --trace mono(1) manpage for the options format.
- *
- * \returns TRUE if the options were parsed and set correctly, FALSE otherwise.
- */
+* mono_jit_set_trace_options:
+* \param options string representing the trace options
+* Set the options of the tracing engine. This function can be called before initializing
+* the mono runtime. See the --trace mono(1) manpage for the options format.
+*
+* \returns TRUE if the options were parsed and set correctly, FALSE otherwise.
+*/
 gboolean
 mono_jit_set_trace_options (const char* options)
 {
-	MonoCallSpec *trace_opt = mono_trace_set_options (options);
-	if (trace_opt == NULL)
-		return FALSE;
-	mono_jit_trace_calls = trace_opt;
-	return TRUE;
+MonoCallSpec *trace_opt = mono_trace_set_options (options);
+if (trace_opt == NULL)
+	return FALSE;
+mono_jit_trace_calls = trace_opt;
+return TRUE;
 }
 
 /**
- * mono_set_signal_chaining:
- *
- * Enable/disable signal chaining. This should be called before \c mono_jit_init.
- * If signal chaining is enabled, the runtime saves the original signal handlers before
- * installing its own handlers, and calls the original ones in the following cases:
- * - a \c SIGSEGV / \c SIGABRT signal received while executing native (i.e. not JITted) code.
- * - \c SIGPROF
- * - \c SIGFPE
- * - \c SIGQUIT
- * - \c SIGUSR2
- * Signal chaining only works on POSIX platforms.
- */
+* mono_set_signal_chaining:
+*
+* Enable/disable signal chaining. This should be called before \c mono_jit_init.
+* If signal chaining is enabled, the runtime saves the original signal handlers before
+* installing its own handlers, and calls the original ones in the following cases:
+* - a \c SIGSEGV / \c SIGABRT signal received while executing native (i.e. not JITted) code.
+* - \c SIGPROF
+* - \c SIGFPE
+* - \c SIGQUIT
+* - \c SIGUSR2
+* Signal chaining only works on POSIX platforms.
+*/
 void
 mono_set_signal_chaining (gboolean chain_signals)
 {
-	mono_do_signal_chaining = chain_signals;
+mono_do_signal_chaining = chain_signals;
 }
 
 /**
- * mono_set_crash_chaining:
- *
- * Enable/disable crash chaining due to signals. When a fatal signal is delivered and
- * Mono doesn't know how to handle it, it will invoke the crash handler. If chrash chaining
- * is enabled, it will first print its crash information and then try to chain with the native handler.
- */
+* mono_set_crash_chaining:
+*
+* Enable/disable crash chaining due to signals. When a fatal signal is delivered and
+* Mono doesn't know how to handle it, it will invoke the crash handler. If chrash chaining
+* is enabled, it will first print its crash information and then try to chain with the native handler.
+*/
 void
 mono_set_crash_chaining (gboolean chain_crashes)
 {
-	mono_do_crash_chaining = chain_crashes;
+mono_do_crash_chaining = chain_crashes;
 }
 
 /**
- * mono_parse_options_from:
- * \param options string containing strings 
- * \param ref_argc pointer to the \c argc variable that might be updated 
- * \param ref_argv pointer to the \c argv string vector variable that might be updated
- *
- * This function parses the contents of the \c MONO_ENV_OPTIONS
- * environment variable as if they were parsed by a command shell
- * splitting the contents by spaces into different elements of the
- * \p argv vector.  This method supports quoting with both the " and '
- * characters.  Inside quoting, spaces and tabs are significant,
- * otherwise, they are considered argument separators.
- *
- * The \ character can be used to escape the next character which will
- * be added to the current element verbatim.  Typically this is used
- * inside quotes.   If the quotes are not balanced, this method 
- *
- * If the environment variable is empty, no changes are made
- * to the values pointed by \p ref_argc and \p ref_argv.
- *
- * Otherwise the \p ref_argv is modified to point to a new array that contains
- * all the previous elements contained in the vector, plus the values parsed.
- * The \p argc is updated to match the new number of parameters.
- *
- * \returns The value NULL is returned on success, otherwise a \c g_strdup allocated
- * string is returned (this is an alias to \c malloc under normal circumstances) that
- * contains the error message that happened during parsing.
- */
+* mono_parse_options_from:
+* \param options string containing strings 
+* \param ref_argc pointer to the \c argc variable that might be updated 
+* \param ref_argv pointer to the \c argv string vector variable that might be updated
+*
+* This function parses the contents of the \c MONO_ENV_OPTIONS
+* environment variable as if they were parsed by a command shell
+* splitting the contents by spaces into different elements of the
+* \p argv vector.  This method supports quoting with both the " and '
+* characters.  Inside quoting, spaces and tabs are significant,
+* otherwise, they are considered argument separators.
+*
+* The \ character can be used to escape the next character which will
+* be added to the current element verbatim.  Typically this is used
+* inside quotes.   If the quotes are not balanced, this method 
+*
+* If the environment variable is empty, no changes are made
+* to the values pointed by \p ref_argc and \p ref_argv.
+*
+* Otherwise the \p ref_argv is modified to point to a new array that contains
+* all the previous elements contained in the vector, plus the values parsed.
+* The \p argc is updated to match the new number of parameters.
+*
+* \returns The value NULL is returned on success, otherwise a \c g_strdup allocated
+* string is returned (this is an alias to \c malloc under normal circumstances) that
+* contains the error message that happened during parsing.
+*/
 char *
 mono_parse_options_from (const char *options, int *ref_argc, char **ref_argv [])
 {
-	return mono_parse_options (options, ref_argc, ref_argv, TRUE);
+return mono_parse_options (options, ref_argc, ref_argv, TRUE);
 }
 
 static void
 merge_parsed_options (GPtrArray *parsed_options, int *ref_argc, char **ref_argv [], gboolean prepend)
 {
-	int argc = *ref_argc;
-	char **argv = *ref_argv;
+int argc = *ref_argc;
+char **argv = *ref_argv;
 
-	if (parsed_options->len > 0){
-		int new_argc = parsed_options->len + argc;
-		char **new_argv = g_new (char *, new_argc + 1);
-		guint i;
-		guint j;
+if (parsed_options->len > 0){
+	int new_argc = parsed_options->len + argc;
+	char **new_argv = g_new (char *, new_argc + 1);
+	guint i;
+	guint j;
 
-		new_argv [0] = argv [0];
+	new_argv [0] = argv [0];
 
-		i = 1;
-		if (prepend){
-			/* First the environment variable settings, to allow the command line options to override */
-			for (i = 0; i < parsed_options->len; i++)
-				new_argv [i+1] = (char *)g_ptr_array_index (parsed_options, i);
-			i++;
-		}
-		for (j = 1; j < argc; j++)
-			new_argv [i++] = argv [j];
-		if (!prepend){
-			for (j = 0; j < parsed_options->len; j++)
-				new_argv [i++] = (char *)g_ptr_array_index (parsed_options, j);
-		}
-		new_argv [i] = NULL;
-
-		*ref_argc = new_argc;
-		*ref_argv = new_argv;
+	i = 1;
+	if (prepend){
+		/* First the environment variable settings, to allow the command line options to override */
+		for (i = 0; i < parsed_options->len; i++)
+			new_argv [i+1] = (char *)g_ptr_array_index (parsed_options, i);
+		i++;
 	}
+	for (j = 1; j < argc; j++)
+		new_argv [i++] = argv [j];
+	if (!prepend){
+		for (j = 0; j < parsed_options->len; j++)
+			new_argv [i++] = (char *)g_ptr_array_index (parsed_options, j);
+	}
+	new_argv [i] = NULL;
+
+	*ref_argc = new_argc;
+	*ref_argv = new_argv;
+}
 }
 
 static char *
 mono_parse_options (const char *options, int *ref_argc, char **ref_argv [], gboolean prepend)
 {
-	if (options == NULL)
-		return NULL;
-
-	GPtrArray *array = g_ptr_array_new ();
-	GString *buffer = g_string_new ("");
-	const char *p;
-	gboolean in_quotes = FALSE;
-	char quote_char = '\0';
-
-	for (p = options; *p; p++){
-		switch (*p){
-		case ' ': case '\t': case '\n':
-			if (!in_quotes) {
-				if (buffer->len != 0){
-					g_ptr_array_add (array, g_strdup (buffer->str));
-					g_string_truncate (buffer, 0);
-				}
-			} else {
-				g_string_append_c (buffer, *p);
-			}
-			break;
-		case '\\':
-			if (p [1]){
-				g_string_append_c (buffer, p [1]);
-				p++;
-			}
-			break;
-		case '\'':
-		case '"':
-			if (in_quotes) {
-				if (quote_char == *p)
-					in_quotes = FALSE;
-				else
-					g_string_append_c (buffer, *p);
-			} else {
-				in_quotes = TRUE;
-				quote_char = *p;
-			}
-			break;
-		default:
-			g_string_append_c (buffer, *p);
-			break;
-		}
-	}
-	if (in_quotes) 
-		return g_strdup_printf ("Unmatched quotes in value: [%s]\n", options);
-
-	if (buffer->len != 0)
-		g_ptr_array_add (array, g_strdup (buffer->str));
-	g_string_free (buffer, TRUE);
-
-	merge_parsed_options (array, ref_argc, ref_argv, prepend);
-	g_ptr_array_free (array, TRUE);
-
+if (options == NULL)
 	return NULL;
+
+GPtrArray *array = g_ptr_array_new ();
+GString *buffer = g_string_new ("");
+const char *p;
+gboolean in_quotes = FALSE;
+char quote_char = '\0';
+
+for (p = options; *p; p++){
+	switch (*p){
+	case ' ': case '\t': case '\n':
+		if (!in_quotes) {
+			if (buffer->len != 0){
+				g_ptr_array_add (array, g_strdup (buffer->str));
+				g_string_truncate (buffer, 0);
+			}
+		} else {
+			g_string_append_c (buffer, *p);
+		}
+		break;
+	case '\\':
+		if (p [1]){
+			g_string_append_c (buffer, p [1]);
+			p++;
+		}
+		break;
+	case '\'':
+	case '"':
+		if (in_quotes) {
+			if (quote_char == *p)
+				in_quotes = FALSE;
+			else
+				g_string_append_c (buffer, *p);
+		} else {
+			in_quotes = TRUE;
+			quote_char = *p;
+		}
+		break;
+	default:
+		g_string_append_c (buffer, *p);
+		break;
+	}
+}
+if (in_quotes) 
+	return g_strdup_printf ("Unmatched quotes in value: [%s]\n", options);
+
+if (buffer->len != 0)
+	g_ptr_array_add (array, g_strdup (buffer->str));
+g_string_free (buffer, TRUE);
+
+merge_parsed_options (array, ref_argc, ref_argv, prepend);
+g_ptr_array_free (array, TRUE);
+
+return NULL;
 }
 
 #if defined(HOST_WIN32) && HAVE_API_SUPPORT_WIN32_COMMAND_LINE_TO_ARGV
@@ -3218,109 +3218,109 @@ mono_parse_options (const char *options, int *ref_argc, char **ref_argv [], gboo
 static char *
 mono_win32_parse_options (const char *options, int *ref_argc, char **ref_argv [], gboolean prepend)
 {
-	int argc;
-	gunichar2 **argv;
-	gunichar2 *optionsw;
+int argc;
+gunichar2 **argv;
+gunichar2 *optionsw;
 
-	if (!options)
-		return NULL;
+if (!options)
+	return NULL;
 
-	GPtrArray *array = g_ptr_array_new ();
-	optionsw = g_utf8_to_utf16 (options, -1, NULL, NULL, NULL);
-	if (optionsw) {
-		gunichar2 *p;
-		gboolean in_quotes = FALSE;
-		gunichar2 quote_char = L'\0';
-		for (p = optionsw; *p; p++){
-			switch (*p){
-			case L'\n':
-				if (!in_quotes)
-					*p = L' ';
-				break;
-			case L'\'':
-			case L'"':
-				if (in_quotes) {
-					if (quote_char == *p)
-						in_quotes = FALSE;
-				} else {
-					in_quotes = TRUE;
-					quote_char = *p;
-				}
-				break;
+GPtrArray *array = g_ptr_array_new ();
+optionsw = g_utf8_to_utf16 (options, -1, NULL, NULL, NULL);
+if (optionsw) {
+	gunichar2 *p;
+	gboolean in_quotes = FALSE;
+	gunichar2 quote_char = L'\0';
+	for (p = optionsw; *p; p++){
+		switch (*p){
+		case L'\n':
+			if (!in_quotes)
+				*p = L' ';
+			break;
+		case L'\'':
+		case L'"':
+			if (in_quotes) {
+				if (quote_char == *p)
+					in_quotes = FALSE;
+			} else {
+				in_quotes = TRUE;
+				quote_char = *p;
 			}
+			break;
 		}
-
-		argv = CommandLineToArgvW (optionsw, &argc);
-		if (argv) {
-			for (int i = 0; i < argc; i++)
-				g_ptr_array_add (array, g_utf16_to_utf8 (argv[i], -1, NULL, NULL, NULL));
-
-			LocalFree (argv);
-		}
-
-		g_free (optionsw);
 	}
 
-	merge_parsed_options (array, ref_argc, ref_argv, prepend);
-	g_ptr_array_free (array, TRUE);
+	argv = CommandLineToArgvW (optionsw, &argc);
+	if (argv) {
+		for (int i = 0; i < argc; i++)
+			g_ptr_array_add (array, g_utf16_to_utf8 (argv[i], -1, NULL, NULL, NULL));
 
-	return NULL;
+		LocalFree (argv);
+	}
+
+	g_free (optionsw);
+}
+
+merge_parsed_options (array, ref_argc, ref_argv, prepend);
+g_ptr_array_free (array, TRUE);
+
+return NULL;
 }
 
 static char *
 mono_parse_response_options (const char *options, int *ref_argc, char **ref_argv [], gboolean prepend)
 {
-	return mono_win32_parse_options (options, ref_argc, ref_argv, prepend);
+return mono_win32_parse_options (options, ref_argc, ref_argv, prepend);
 }
 #else
 static char *
 mono_parse_response_options (const char *options, int *ref_argc, char **ref_argv [], gboolean prepend)
 {
-	return mono_parse_options (options, ref_argc, ref_argv, prepend);
+return mono_parse_options (options, ref_argc, ref_argv, prepend);
 }
 #endif
 
 /**
- * mono_parse_env_options:
- * \param ref_argc pointer to the \c argc variable that might be updated 
- * \param ref_argv pointer to the \c argv string vector variable that might be updated
- *
- * This function parses the contents of the \c MONO_ENV_OPTIONS
- * environment variable as if they were parsed by a command shell
- * splitting the contents by spaces into different elements of the
- * \p argv vector.  This method supports quoting with both the " and '
- * characters.  Inside quoting, spaces and tabs are significant,
- * otherwise, they are considered argument separators.
- *
- * The \ character can be used to escape the next character which will
- * be added to the current element verbatim.  Typically this is used
- * inside quotes.   If the quotes are not balanced, this method 
- *
- * If the environment variable is empty, no changes are made
- * to the values pointed by \p ref_argc and \p ref_argv.
- *
- * Otherwise the \p ref_argv is modified to point to a new array that contains
- * all the previous elements contained in the vector, plus the values parsed.
- * The \p argc is updated to match the new number of parameters.
- *
- * If there is an error parsing, this method will terminate the process by
- * calling exit(1).
- *
- * An alternative to this method that allows an arbitrary string to be parsed
- * and does not exit on error is the `api:mono_parse_options_from`.
- */
+* mono_parse_env_options:
+* \param ref_argc pointer to the \c argc variable that might be updated 
+* \param ref_argv pointer to the \c argv string vector variable that might be updated
+*
+* This function parses the contents of the \c MONO_ENV_OPTIONS
+* environment variable as if they were parsed by a command shell
+* splitting the contents by spaces into different elements of the
+* \p argv vector.  This method supports quoting with both the " and '
+* characters.  Inside quoting, spaces and tabs are significant,
+* otherwise, they are considered argument separators.
+*
+* The \ character can be used to escape the next character which will
+* be added to the current element verbatim.  Typically this is used
+* inside quotes.   If the quotes are not balanced, this method 
+*
+* If the environment variable is empty, no changes are made
+* to the values pointed by \p ref_argc and \p ref_argv.
+*
+* Otherwise the \p ref_argv is modified to point to a new array that contains
+* all the previous elements contained in the vector, plus the values parsed.
+* The \p argc is updated to match the new number of parameters.
+*
+* If there is an error parsing, this method will terminate the process by
+* calling exit(1).
+*
+* An alternative to this method that allows an arbitrary string to be parsed
+* and does not exit on error is the `api:mono_parse_options_from`.
+*/
 void
 mono_parse_env_options (int *ref_argc, char **ref_argv [])
 {
-	char *ret;
-	
-	char *env_options = g_getenv ("MONO_ENV_OPTIONS");
-	if (env_options == NULL)
-		return;
-	ret = mono_parse_options_from (env_options, ref_argc, ref_argv);
-	g_free (env_options);
-	if (ret == NULL)
-		return;
-	fprintf (stderr, "%s", ret);
-	exit (1);
+char *ret;
+
+char *env_options = g_getenv ("MONO_ENV_OPTIONS");
+if (env_options == NULL)
+	return;
+ret = mono_parse_options_from (env_options, ref_argc, ref_argv);
+g_free (env_options);
+if (ret == NULL)
+	return;
+fprintf (stderr, "%s", ret);
+exit (1);
 }

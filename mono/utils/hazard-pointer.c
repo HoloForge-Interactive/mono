@@ -79,7 +79,7 @@ mono_thread_small_id_alloc (void)
 	mono_os_mutex_lock (&small_id_mutex);
 
 	if (!small_id_table)
-		small_id_table = mono_bitset_new (1, 0);
+		small_id_table = mono_bitset_new(1, 0);
 
 	id = mono_bitset_find_first_unset (small_id_table, small_id_next - 1);
 	if (id == -1)

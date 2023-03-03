@@ -51,6 +51,7 @@ g_assertion_disable_global (GAbortFunc abort_func)
 void
 g_assert_abort (void)
 {
+	g_printerr("g_assert_abort");
 	if (internal_abort_func)
 		internal_abort_func ();
 	else
@@ -207,7 +208,8 @@ g_assertion_message (const gchar *format, ...)
 	failure_assertion = g_logv_nofree (G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, format, args);
 
 	va_end (args);
-	exit (0);
+
+	exit (EXIT_FAILURE);
 }
 
 // Emscriptem emulates varargs, and fails to stack pack multiple outgoing varargs areas,

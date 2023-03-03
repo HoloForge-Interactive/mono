@@ -1755,4 +1755,15 @@ get_notify_debugger_of_wait_completion_method (void)
 }
 
 
+// tdelort : custom uwp debugger log
+void uwp_debugger_log(const gchar* format, ...)
+{
+	va_list args;
+	gint ret;
+
+	va_start (args, format);
+	ret =  g_printv(format, args);
+	va_end (args);
+}
+
 #endif

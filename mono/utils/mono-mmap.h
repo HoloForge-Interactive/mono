@@ -8,6 +8,11 @@
 #include <glib.h>
 #include <mono/utils/mono-publib.h>
 
+#if HOST_UWP
+#include <hf_memory_protection.h>
+#include <hf_memory_protection_overrides.h>
+#endif
+
 enum {
 	/* protection */
 	MONO_MMAP_NONE = 0,

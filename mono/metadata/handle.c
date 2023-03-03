@@ -268,6 +268,7 @@ mono_handle_stack_free_domain (HandleStack *stack, MonoDomain *domain)
 			HandleChunkElem *elem = &cur->elems[idx];
 			if (!elem->o)
 				continue;
+			g_print("Still have a handle to %p (if it aborts, this means it was a memory leaks, if it doesn't it means it was not from the unloaded domain so it's not important)", elem->o);
 			g_assert (mono_object_domain (elem->o) != domain);
 		}
 		if (cur == last)

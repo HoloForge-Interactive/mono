@@ -2493,7 +2493,6 @@ int
 mono_gc_pthread_create (pthread_t *new_thread, const pthread_attr_t *attr, void *(*start_routine)(void *), void *arg)
 {
 	int res;
-
 	MONO_ENTER_GC_SAFE;
 	mono_threads_join_lock ();
 	res = pthread_create (new_thread, attr, start_routine, arg);

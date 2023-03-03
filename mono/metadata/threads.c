@@ -1768,8 +1768,8 @@ mono_thread_exit (void)
 	mono_thread_detach_internal (thread);
 
 	/* we could add a callback here for embedders to use. */
-	if (mono_thread_get_main () && (thread == mono_thread_get_main ()->internal_thread))
-		exit (mono_environment_exitcode_get ());
+	if (mono_thread_get_main() && (thread == mono_thread_get_main()->internal_thread))
+		exit(mono_environment_exitcode_get());
 
 	mono_thread_info_exit (0);
 }

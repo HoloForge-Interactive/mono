@@ -3190,3 +3190,17 @@ mono_type_from_handle_impl (MonoType *handle, MonoError *error)
 	mono_class_init_internal (mono_class_from_mono_type_internal (handle));
 	return mono_type_get_object_handle (mono_domain_get (), handle, error);
 }
+
+// HoloForge Functions
+MonoClass*
+mono_class_generic_create(MonoClass* gtype, int argc, MonoClass** args)
+{
+	MonoType** argv = g_newa (MonoType*, argc);
+	for (int i = 0; i < argc; i++)
+	{
+		argv [i] = m_class_get_byval_arg (args[i]);
+	}
+
+	return mono_class_bind_generic_parameters (gtype, argc, argv, FALSE);
+}
+// End of HoloForge Functions

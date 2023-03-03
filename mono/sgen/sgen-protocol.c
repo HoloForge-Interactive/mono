@@ -99,7 +99,21 @@ binary_protocol_open_file (gboolean assert_on_failure)
 		filename = filename_or_prefix;
 
 #if defined(HOST_WIN32)
+// tdelort : using UWP compatible api to create file
+#if HOST_UWP
+
+	g_warning("CreateFile in a UWP context has a more restricted use");
+	CREATEFILE2_EXTENDED_PARAMETERS extend = { 0 };
+	extend.dwSize = sizeof(CREATEFILE2_EXTENDED_PARAMETERS);
+	extend.dwFileAttributes = FILE_ATTRIBUTE_NORMAL;
+	extend.dwFileFlags = 0;
+	extend.dwSecurityQosFlags = 0;
+	extend.lpSecurityAttributes = NULL;
+	extend.hTemplateFile = NULL;
+	binary_protocol_file = CreateFile2(filename, GENERIC_WRITE, 0, CREATE_ALWAYS, &extend);
+#else
 	binary_protocol_file = CreateFileA (filename, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+#endif
 #elif defined(HAVE_UNISTD_H)
 	do {
 		binary_protocol_file = open (filename, O_CREAT | O_WRONLY, 0644);

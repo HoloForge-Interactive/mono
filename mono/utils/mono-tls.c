@@ -31,13 +31,13 @@
 #define MONO_THREAD_VAR_OFFSET(var,offset) __asm ("movl $" #var "@ntpoff, %0" : "=r" (offset))
 #endif
 
-#elif defined(TARGET_ARM64) && !defined(PIC)
+#elif defined(TARGET_ARM64) && !defined(PIC) && !defined(HOST_WIN32) && !defined(HOST_ANDROID)
 
 #define MONO_THREAD_VAR_OFFSET(var,offset) \
 	__asm ( "mov %0, #0\n add %0, %0, #:tprel_hi12:" #var "\n add %0, %0, #:tprel_lo12_nc:" #var "\n" \
 		: "=r" (offset))
 
-#elif defined(TARGET_ARM) && defined(__ARM_EABI__) && !defined(PIC)
+#elif defined(TARGET_ARM) && defined(__ARM_EABI__) && !defined(PIC) && !defined(HOST_ANDROID)
 
 #define MONO_THREAD_VAR_OFFSET(var,offset) __asm ("     ldr     %0, 1f; b 2f; 1: .word " #var "(tpoff); 2:" : "=r" (offset))
 

@@ -2239,6 +2239,10 @@ mono_codegen (MonoCompile *cfg)
 	}
 
 	mono_codeman_enable_write ();
+#if HOST_UWP // tdelort : see WSA/README.md
+	HFMonoPageProtectionMode old_protect1;
+	mono_set_execute_mode(HF_READWRITE, &old_protect1, "mini.c:mono_codegen:1");
+#endif
 
 	if (cfg->thunk_area) {
 		cfg->thunks_offset = cfg->code_size + unwindlen;
@@ -2312,6 +2316,7 @@ mono_codegen (MonoCompile *cfg)
 				mono_cfg_set_exception (cfg, MONO_EXCEPTION_MONO_ERROR);
 				return;
 			}
+
 			mono_arch_patch_code_new (cfg, cfg->domain, cfg->native_code, ji, target);
 		}
 	}
@@ -2343,6 +2348,10 @@ mono_codegen (MonoCompile *cfg)
 #ifdef MONO_ARCH_HAVE_UNWIND_TABLE
 	if (!cfg->compile_aot)
 		mono_arch_unwindinfo_install_method_unwind_info (&cfg->arch.unwindinfo, cfg->native_code, cfg->code_len);
+#endif
+
+#if HOST_UWP // tdelort : see WSA/README.md
+	mono_set_execute_mode(old_protect1, NULL, "mini.c:mono_codegen:1");
 #endif
 }
 

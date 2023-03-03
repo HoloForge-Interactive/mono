@@ -11,6 +11,12 @@
 #include <mono/utils/mono-context.h>
 #include <glib.h>
 
+// tdelort : adding support for Windows + ARM32
+#ifdef HOST_WIN32
+#include <windows.h>
+#include <signal.h>
+#endif
+
 #if defined(ARM_FPU_NONE)
 #define MONO_ARCH_SOFT_FLOAT_FALLBACK 1
 #endif
@@ -29,7 +35,7 @@
 #define ARM_FP_MODEL "vfp"
 #elif defined(ARM_FPU_NONE)
 #define ARM_FP_MODEL "vfp+fallback"
-#elif defined(ARM_FPU_VFP_HARD)
+#elif defined(ARM_FPU_VFP_HARD) // tdelort : Windows only works on ARM CPU which have FPU in hardware
 #define ARM_FP_MODEL "vfp+hard"
 #else
 #error "At least one of ARM_FPU_NONE, ARM_FPU_VFP or ARM_FPU_VFP_HARD must be defined."
@@ -37,7 +43,7 @@
 
 #define MONO_ARCH_ARCHITECTURE ARM_ARCHITECTURE "," ARM_FP_MODEL
 
-#define MONO_ARCH_CPU_SPEC mono_arm_cpu_desc
+#define MONO_ARCH_CPU_SPEC mono_arm_desc
 
 #if G_BYTE_ORDER == G_LITTLE_ENDIAN
 #define ARM_LSW_REG ARMREG_R0
@@ -324,7 +330,7 @@ typedef struct MonoCompileArch {
 #define ARM_FIRST_ARG_REG 0
 #define ARM_LAST_ARG_REG 3
 
-#define MONO_ARCH_USE_SIGACTION 1
+//#define MONO_ARCH_USE_SIGACTION 1 // tdelort : sigaction cannot be used on Windows
 
 #if defined(HOST_WATCHOS)
 #undef MONO_ARCH_USE_SIGACTION
@@ -348,7 +354,8 @@ typedef struct MonoCompileArch {
 #define MONO_ARCH_HAVE_OP_TAILCALL_MEMBASE 1
 #define MONO_ARCH_HAVE_OP_TAILCALL_REG 1
 
-#if !(defined(TARGET_ANDROID) && defined(MONO_CROSS_COMPILE))
+// tdelort : removed when using windows because ARM debugging is not implemented for windows and requires fixing
+#if !(defined(TARGET_ANDROID) && defined(MONO_CROSS_COMPILE) || defined(HOST_WIN32))
 #define MONO_ARCH_SOFT_DEBUG_SUPPORTED 1
 #endif
 
@@ -387,15 +394,27 @@ typedef struct MonoCompileArch {
 
 // Does the ABI have a volatile non-parameter register, so tailcall
 // can pass context to generics or interfaces?
-#define MONO_ARCH_HAVE_VOLATILE_NON_PARAM_REGISTER 0
+#define MONO_ARCH_HAVE_VOLATILE_NON_PARAM_REGISTER 1 // tdelort : yes, in MSVC the r12 is volatile and not a parameter register
 
 #define MONO_CONTEXT_SET_LLVM_EXC_REG(ctx, exc) do { (ctx)->regs [0] = (gsize)exc; } while (0)
 
+// tdelort : __builtin_frame_address is not supported with MSVC. 
+// This is the one used in mini-amd64 when using MSVC. As expected, it uses _AddressOfReturnAddress
+#if _MSC_VER
+#define MONO_INIT_CONTEXT_FROM_FUNC(ctx, start_func) do { \
+    guint64 stackptr; \
+	stackptr = ((guint64)_AddressOfReturnAddress () - sizeof (void*));\
+	MONO_CONTEXT_SET_IP ((ctx), (start_func)); \
+	MONO_CONTEXT_SET_BP ((ctx), stackptr); \
+	MONO_CONTEXT_SET_SP ((ctx), stackptr); \
+} while (0)
+#else
 #define MONO_INIT_CONTEXT_FROM_FUNC(ctx,func) do {	\
 		MONO_CONTEXT_SET_BP ((ctx), __builtin_frame_address (0));	\
 		MONO_CONTEXT_SET_SP ((ctx), __builtin_frame_address (0));	\
 		MONO_CONTEXT_SET_IP ((ctx), (func));	\
 	} while (0)
+#endif
 
 #define MONO_ARCH_INIT_TOP_LMF_ENTRY(lmf)
 

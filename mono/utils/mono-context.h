@@ -46,7 +46,15 @@ typedef __m128d MonoContextSimdReg;
 #endif
 #elif defined(TARGET_ARM64)
 #define MONO_HAVE_SIMD_REG
+// tdelort : added to be able to build genmdesc on x64 arch while TARGET ARM64 is defined
+#if defined(_MSC_VER)
+// tdelort : __uint128_t doesn't seem to exist on MSVC/ARM64, using __n128 from arm64_neon.h instead
+#include <arm64_neon.h>
+//typedef __uint128_t MonoContextSimdReg;
+typedef __n128 MonoContextSimdReg;
+#else
 typedef __uint128_t MonoContextSimdReg;
+#endif
 #endif
 
 /*
@@ -444,11 +452,40 @@ typedef struct {
 
 #else
 
+#if defined(HOST_WIN32) && defined(_MSC_VER) // tdelort : added to support arm on windows compiled with msvc
+
+/* msvc doesn't support inline assembly for asm, so have to use a separate .asm file */
+// G_EXTERN_C due to being written in assembly.
+G_EXTERN_C void mono_get_r1_to_r15 (void *);
+G_EXTERN_C host_mgreg_t mono_get_r0 ();
+G_EXTERN_C void mono_set_r0 (host_mgreg_t);
+/*
+ * walkthrough : 
+ *	- mono_get_r0 to get the r0 register (that will be overriten when calling the next function with an argument
+ *	- mono_get_r1_to_r15 to get all other general registers
+ *	- fill the MonoContext ctx.
+ *	- r15 is also aliased as PC so we set pc with r15 value
+ *	- -reset r0 to its original value before overwritting it in mono_get_r1_to_r15 call
+ */
+#define MONO_CONTEXT_GET_CURRENT(ctx) \
+do { \
+	host_mgreg_t reg1_to_15[15];			\
+	host_mgreg_t reg0 = mono_get_r0();		\
+	mono_get_r1_to_r15((void*)reg1_to_15);		\
+	ctx.regs[0] = reg0;				\
+	for (int i = 0; i < 15; i++)			\
+		ctx.regs[i + 1] = reg1_to_15[i];	\
+	ctx.pc = ctx.regs[ARMREG_PC];				\
+	mono_set_r0(reg0); \
+} while (0)
+
+#else
+
 #define MONO_CONTEXT_GET_CURRENT(ctx)	do { 	\
-	__asm__ __volatile__(			\
-		"push {r0}\n"				\
-		"push {r1}\n"				\
-		"mov r0, %0\n"				\
+	__asm__ __volatile__(					\
+		"push {r0}\n"			\
+		"push {r1}\n"			\
+		"mov r0, %0\n"			\
 		"ldr r1, [sp, #4]\n"   		\
 		"str r1, [r0], #4\n"   		\
 		"ldr r1, [sp, #0]\n"	   	\
@@ -456,16 +493,17 @@ typedef struct {
 		"stmia r0!, {r2-r12}\n"		\
 		"str sp, [r0], #4\n"		\
 		"str lr, [r0], #4\n"		\
-		"mov r1, pc\n"				\
+		"mov r1, pc\n"			\
 		"str r1, [r0], #4\n"		\
-		"pop {r1}\n"				\
-		"pop {r0}\n"				\
-		:							\
-		: "r" (&ctx.regs)			\
-		: "memory"					\
-	);								\
+		"pop {r1}\n"			\
+		"pop {r0}\n"			\
+		:				\
+		: "r" (&ctx.regs)		\
+		: "memory"			\
+	);					\
 	ctx.pc = ctx.regs [15];			\
 } while (0)
+#endif
 
 #endif
 
@@ -520,8 +558,41 @@ typedef struct {
 	ctx.regs [ARMREG_SP] = (host_mgreg_t)(gsize)&_dummy; \
 } while (0);
 
-#else
+#elif defined(HOST_WIN32) && defined(_MSC_VER) // tdelort : added to support arm64 on windows compiled with msvc
 
+/* msvc doesn't support inline assembly for asm64, so have to use a separate .asm file */
+// G_EXTERN_C due to being written in assembly.
+G_EXTERN_C void mono_get_gregs_64 (void *);
+G_EXTERN_C void mono_get_fregs_64 (void *);
+G_EXTERN_C host_mgreg_t mono_get_x0_64 ();
+G_EXTERN_C void mono_set_x0_64 (host_mgreg_t);
+/*
+ * Very similar to the ARM version, except we also get q registers (we should probably do this in the ARM version but it
+ * was not originally done in mono so it might not be vital).
+ * (they probably did not do it in ARM32 because with ARM32, we are not sure if there are floating point registers and how they are used)
+ */
+#define MONO_CONTEXT_GET_CURRENT(ctx) \
+do { \
+	host_mgreg_t gregs[32];	/* x0-x30 pc */	\
+	MonoContextSimdReg fregs[32];	/* q0-q31 */	\
+	host_mgreg_t reg0 = mono_get_x0_64();	\
+	mono_get_gregs_64((void*)gregs);	\
+	mono_get_fregs_64((void*)fregs);	\
+	ctx.regs[0] = reg0;			\
+/* For a more accurate PC, using LR is better since it will be the return address
+   of the call to mono_get_ctx above */		\
+	/*ctx.pc = ctx.regs[ARMREG_LR]; TODO	*/	\
+	for (int i = 1; i < 31; i++)		\
+		ctx.regs[i] = gregs[i];		\
+	for (int i = 0; i < 32; i++)		\
+		ctx.fregs[i] = fregs[i];	\
+/* MonoContext contains a reg[32] but x31 does not really exist so we set it to rzr (Cf arm64.asm) */ \
+	ctx.regs[31] = gregs[0];		\
+	ctx.pc = gregs[31];			\
+	mono_set_x0_64(reg0);			\
+} while (0)
+
+#else
 #define MONO_CONTEXT_GET_CURRENT(ctx)	do { 	\
 	__asm__ __volatile__(			\
 		"mov x16, %0\n" \

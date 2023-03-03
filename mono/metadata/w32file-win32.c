@@ -57,7 +57,21 @@ mono_w32file_create(const gunichar2 *name, guint32 fileaccess, guint32 sharemode
 {
 	gpointer res;
 	MONO_ENTER_GC_SAFE;
+#if HOST_UWP
+	// need to use CreateFile2 in UWP
+	g_warning("CreateFile in a UWP context has a more restricted use. Might crash if reading in the wrong folder or with the wrong attributes.");
+
+	CREATEFILE2_EXTENDED_PARAMETERS extend = { 0 };
+	extend.dwSize = sizeof(CREATEFILE2_EXTENDED_PARAMETERS);
+	extend.dwFileAttributes = attrs;
+	extend.dwFileFlags = attrs;
+	extend.dwSecurityQosFlags = attrs;
+	extend.lpSecurityAttributes = NULL;
+	extend.hTemplateFile = NULL;
+	res = CreateFile2(name, fileaccess, sharemode, createmode, &extend);
+#else
 	res = CreateFileW (name, fileaccess, sharemode, NULL, createmode, attrs, NULL);
+#endif
 	MONO_EXIT_GC_SAFE;
 	return res;
 }

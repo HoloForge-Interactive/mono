@@ -67,7 +67,7 @@ typedef struct SeqPointInfo SeqPointInfo;
  * The mini code should not have any compile time dependencies on the GC being used, so the same object file from mini/
  * can be linked into both mono and mono-sgen.
  */
-#if !defined(MONO_DLL_EXPORT) || !defined(_MSC_VER)
+#if !defined(MONO_DLL_EXPORT) /*|| !defined(_MSC_VER) // tdelort : had to scrap this to build for android in visual studio */
 #if defined(HAVE_BOEHM_GC) || defined(HAVE_SGEN_GC)
 #error "The code in mini/ should not depend on these defines."
 #endif

@@ -1059,6 +1059,15 @@ mono_arch_flush_icache (guint8 *code, gint size)
 #if defined(MONO_CROSS_COMPILE)
 #elif __APPLE__
 	sys_icache_invalidate (code, size);
+#elif HOST_WIN32 
+	/*
+	 * tdelort :
+	 *	for now, simply use the same implementation (or the lack there is of) as for x86 and amd64
+	 *	but we should look in details on the implementation I proposed in comments just below since it might
+	 *	actually be required to do such things
+	 */
+	HANDLE current_proc = GetCurrentProcess();
+	FlushInstructionCache(current_proc ,code, size);
 #else
     __builtin___clear_cache ((char*)code, (char*)code + size);
 #endif

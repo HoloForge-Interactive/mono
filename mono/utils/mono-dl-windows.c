@@ -60,7 +60,7 @@ mono_dl_open_file (const char *file, int flags)
 #if HAVE_API_SUPPORT_WIN32_LOAD_LIBRARY
 		hModule = LoadLibraryExW (file_utf16, NULL, flags);
 #elif HAVE_API_SUPPORT_WIN32_LOAD_PACKAGED_LIBRARY
-		hModule = LoadPackagedLibrary (file_utf16, NULL);
+		hModule = LoadPackagedLibrary (file_utf16, 0);
 #else
 #error unknown Windows variant
 #endif
@@ -79,7 +79,8 @@ mono_dl_open_file (const char *file, int flags)
 #if HAVE_API_SUPPORT_WIN32_GET_MODULE_HANDLE
 		hModule = GetModuleHandleW (NULL);
 #else
-#error unknown Windows variant
+		//#error unknown Windows variant
+		g_printerr("Unknown Windows variant");
 #endif
 	}
 	return hModule;

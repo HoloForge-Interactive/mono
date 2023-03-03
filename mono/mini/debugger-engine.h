@@ -237,6 +237,7 @@ typedef struct
 	gboolean has_ctx;
 } StackFrame;
 
+#ifndef DISABLE_SDB // tdelort : for some reason this #if was in the .c but not in .h causing link errors
 void mono_debugger_free_objref (gpointer value);
 
 typedef int DbgEngineErrorCode;
@@ -325,12 +326,18 @@ MonoMethod* get_set_notification_method (MonoClass* async_builder_class);
 MonoMethod* get_notify_debugger_of_wait_completion_method (void);
 MonoMethod* get_object_id_for_debugger_method (MonoClass* async_builder_class);
 
+#endif // #ifndef DISABLE_SDB
+
 #ifdef HOST_ANDROID
 #define PRINT_DEBUG_MSG(level, ...) do { if (G_UNLIKELY ((level) <= log_level)) { g_print (__VA_ARGS__); } } while (0)
 #define DEBUG(level,s) do { if (G_UNLIKELY ((level) <= log_level)) { s; } } while (0)
 #elif HOST_WASM
 void wasm_debugger_log(int level, const gchar *format, ...);
 #define PRINT_DEBUG_MSG(level, ...) do { if (G_UNLIKELY ((level) <= log_level)) { wasm_debugger_log (level, __VA_ARGS__); } } while (0)
+#define DEBUG(level,s) do { if (G_UNLIKELY ((level) <= log_level)) { s; } } while (0)
+#elif HOST_UWP // tdelort : adding debugger for UWP that can be different from win32 one
+void uwp_debugger_log(const gchar *format, ...);
+#define PRINT_DEBUG_MSG(level, ...) do { if (G_UNLIKELY ((level) <= log_level)) { uwp_debugger_log (__VA_ARGS__); } } while (0)
 #define DEBUG(level,s) do { if (G_UNLIKELY ((level) <= log_level)) { s; } } while (0)
 #elif defined(HOST_WIN32) && !HAVE_API_SUPPORT_WIN32_CONSOLE
 void win32_debugger_log(FILE *stream, const gchar *format, ...);
@@ -342,7 +349,11 @@ void win32_debugger_log(FILE *stream, const gchar *format, ...);
 #endif
 #endif
 
-#if defined(HOST_WIN32) && !HAVE_API_SUPPORT_WIN32_CONSOLE
+#if HOST_UWP // tdelort : adding debugger for UWP that can be different from win32 one
+void uwp_debugger_log(const gchar *format, ...);
+#define PRINT_ERROR_MSG(...) uwp_debugger_log (log_file, __VA_ARGS__)
+#define PRINT_MSG(...) uwp_debugger_log (log_file, __VA_ARGS__)
+#elif defined(HOST_WIN32) && !HAVE_API_SUPPORT_WIN32_CONSOLE
 void win32_debugger_log(FILE *stream, const gchar *format, ...);
 #define PRINT_ERROR_MSG(...) win32_debugger_log (log_file, __VA_ARGS__)
 #define PRINT_MSG(...) win32_debugger_log (log_file, __VA_ARGS__)

@@ -57,7 +57,15 @@ static gpointer bp_trampoline;
 static gboolean ios_abi;
 static gboolean enable_ptrauth;
 
-static __attribute__ ((__warn_unused_result__)) guint8* emit_load_regset (guint8 *code, guint64 regs, int basereg, int offset);
+// tdelort : adding a macro to simply switch bewteen the MSVC and GCC version of this (forcing the code to check the return value)
+#ifdef _MSC_VER
+#define CHECK_RETURN _Check_return_
+#else
+#define CHECK_RETURN __attribute__ ((__warn_unused_result__))
+#endif
+
+
+static CHECK_RETURN guint8* emit_load_regset (guint8 *code, guint64 regs, int basereg, int offset);
 static guint8* emit_brx (guint8 *code, int reg);
 static guint8* emit_blrx (guint8 *code, int reg);
 
@@ -341,7 +349,7 @@ emit_imm64_template (guint8 *code, int dreg)
 	return code;
 }
 
-static __attribute__ ((__warn_unused_result__)) guint8*
+static CHECK_RETURN guint8*
 emit_addw_imm (guint8 *code, int dreg, int sreg, int imm)
 {
 	if (!arm_is_arith_imm (imm)) {
@@ -353,7 +361,7 @@ emit_addw_imm (guint8 *code, int dreg, int sreg, int imm)
 	return code;
 }
 
-static __attribute__ ((__warn_unused_result__)) guint8*
+static CHECK_RETURN guint8*
 emit_addx_imm (guint8 *code, int dreg, int sreg, int imm)
 {
 	if (!arm_is_arith_imm (imm)) {
@@ -365,7 +373,7 @@ emit_addx_imm (guint8 *code, int dreg, int sreg, int imm)
 	return code;
 }
 
-static __attribute__ ((__warn_unused_result__)) guint8*
+static CHECK_RETURN guint8*
 emit_subw_imm (guint8 *code, int dreg, int sreg, int imm)
 {
 	if (!arm_is_arith_imm (imm)) {
@@ -377,7 +385,7 @@ emit_subw_imm (guint8 *code, int dreg, int sreg, int imm)
 	return code;
 }
 
-static __attribute__ ((__warn_unused_result__)) guint8*
+static CHECK_RETURN guint8*
 emit_subx_imm (guint8 *code, int dreg, int sreg, int imm)
 {
 	if (!arm_is_arith_imm (imm)) {
@@ -390,7 +398,7 @@ emit_subx_imm (guint8 *code, int dreg, int sreg, int imm)
 }
 
 /* Emit sp+=imm. Clobbers ip0/ip1 */
-static __attribute__ ((__warn_unused_result__)) guint8*
+static CHECK_RETURN guint8*
 emit_addx_sp_imm (guint8 *code, int imm)
 {
 	code = emit_imm (code, ARMREG_IP0, imm);
@@ -401,7 +409,7 @@ emit_addx_sp_imm (guint8 *code, int imm)
 }
 
 /* Emit sp-=imm. Clobbers ip0/ip1 */
-static __attribute__ ((__warn_unused_result__)) guint8*
+static CHECK_RETURN guint8*
 emit_subx_sp_imm (guint8 *code, int imm)
 {
 	code = emit_imm (code, ARMREG_IP0, imm);
@@ -411,7 +419,7 @@ emit_subx_sp_imm (guint8 *code, int imm)
 	return code;
 }
 
-static __attribute__ ((__warn_unused_result__)) guint8*
+static CHECK_RETURN guint8*
 emit_andw_imm (guint8 *code, int dreg, int sreg, int imm)
 {
 	// FIXME:
@@ -421,7 +429,7 @@ emit_andw_imm (guint8 *code, int dreg, int sreg, int imm)
 	return code;
 }
 
-static __attribute__ ((__warn_unused_result__)) guint8*
+static CHECK_RETURN guint8*
 emit_andx_imm (guint8 *code, int dreg, int sreg, int imm)
 {
 	// FIXME:
@@ -431,7 +439,7 @@ emit_andx_imm (guint8 *code, int dreg, int sreg, int imm)
 	return code;
 }
 
-static __attribute__ ((__warn_unused_result__)) guint8*
+static CHECK_RETURN guint8*
 emit_orrw_imm (guint8 *code, int dreg, int sreg, int imm)
 {
 	// FIXME:
@@ -441,7 +449,7 @@ emit_orrw_imm (guint8 *code, int dreg, int sreg, int imm)
 	return code;
 }
 
-static __attribute__ ((__warn_unused_result__)) guint8*
+static CHECK_RETURN guint8*
 emit_orrx_imm (guint8 *code, int dreg, int sreg, int imm)
 {
 	// FIXME:
@@ -451,7 +459,7 @@ emit_orrx_imm (guint8 *code, int dreg, int sreg, int imm)
 	return code;
 }
 
-static __attribute__ ((__warn_unused_result__)) guint8*
+static CHECK_RETURN guint8*
 emit_eorw_imm (guint8 *code, int dreg, int sreg, int imm)
 {
 	// FIXME:
@@ -461,7 +469,7 @@ emit_eorw_imm (guint8 *code, int dreg, int sreg, int imm)
 	return code;
 }
 
-static __attribute__ ((__warn_unused_result__)) guint8*
+static CHECK_RETURN guint8*
 emit_eorx_imm (guint8 *code, int dreg, int sreg, int imm)
 {
 	// FIXME:
@@ -471,7 +479,7 @@ emit_eorx_imm (guint8 *code, int dreg, int sreg, int imm)
 	return code;
 }
 
-static __attribute__ ((__warn_unused_result__)) guint8*
+static CHECK_RETURN guint8*
 emit_cmpw_imm (guint8 *code, int sreg, int imm)
 {
 	if (imm == 0) {
@@ -485,7 +493,7 @@ emit_cmpw_imm (guint8 *code, int sreg, int imm)
 	return code;
 }
 
-static __attribute__ ((__warn_unused_result__)) guint8*
+static CHECK_RETURN guint8*
 emit_cmpx_imm (guint8 *code, int sreg, int imm)
 {
 	if (imm == 0) {
@@ -499,7 +507,7 @@ emit_cmpx_imm (guint8 *code, int sreg, int imm)
 	return code;
 }
 
-static __attribute__ ((__warn_unused_result__)) guint8*
+static CHECK_RETURN guint8*
 emit_strb (guint8 *code, int rt, int rn, int imm)
 {
 	if (arm_is_strb_imm (imm)) {
@@ -513,7 +521,7 @@ emit_strb (guint8 *code, int rt, int rn, int imm)
 	return code;
 }
 
-static __attribute__ ((__warn_unused_result__)) guint8*
+static CHECK_RETURN guint8*
 emit_strh (guint8 *code, int rt, int rn, int imm)
 {
 	if (arm_is_strh_imm (imm)) {
@@ -527,7 +535,7 @@ emit_strh (guint8 *code, int rt, int rn, int imm)
 	return code;
 }
 
-static __attribute__ ((__warn_unused_result__)) guint8*
+static CHECK_RETURN guint8*
 emit_strw (guint8 *code, int rt, int rn, int imm)
 {
 	if (arm_is_strw_imm (imm)) {
@@ -541,7 +549,7 @@ emit_strw (guint8 *code, int rt, int rn, int imm)
 	return code;
 }
 
-static __attribute__ ((__warn_unused_result__)) guint8*
+static CHECK_RETURN guint8*
 emit_strfpw (guint8 *code, int rt, int rn, int imm)
 {
 	if (arm_is_strw_imm (imm)) {
@@ -555,7 +563,7 @@ emit_strfpw (guint8 *code, int rt, int rn, int imm)
 	return code;
 }
 
-static __attribute__ ((__warn_unused_result__)) guint8*
+static CHECK_RETURN guint8*
 emit_strfpx (guint8 *code, int rt, int rn, int imm)
 {
 	if (arm_is_strx_imm (imm)) {
@@ -569,7 +577,7 @@ emit_strfpx (guint8 *code, int rt, int rn, int imm)
 	return code;
 }
 
-static __attribute__ ((__warn_unused_result__)) guint8*
+static CHECK_RETURN guint8*
 emit_strx (guint8 *code, int rt, int rn, int imm)
 {
 	if (arm_is_strx_imm (imm)) {
@@ -583,7 +591,7 @@ emit_strx (guint8 *code, int rt, int rn, int imm)
 	return code;
 }
 
-static __attribute__ ((__warn_unused_result__)) guint8*
+static CHECK_RETURN guint8*
 emit_ldrb (guint8 *code, int rt, int rn, int imm)
 {
 	if (arm_is_pimm12_scaled (imm, 1)) {
@@ -597,7 +605,7 @@ emit_ldrb (guint8 *code, int rt, int rn, int imm)
 	return code;
 }
 
-static __attribute__ ((__warn_unused_result__)) guint8*
+static CHECK_RETURN guint8*
 emit_ldrsbx (guint8 *code, int rt, int rn, int imm)
 {
 	if (arm_is_pimm12_scaled (imm, 1)) {
@@ -611,7 +619,7 @@ emit_ldrsbx (guint8 *code, int rt, int rn, int imm)
 	return code;
 }
 
-static __attribute__ ((__warn_unused_result__)) guint8*
+static CHECK_RETURN guint8*
 emit_ldrh (guint8 *code, int rt, int rn, int imm)
 {
 	if (arm_is_pimm12_scaled (imm, 2)) {
@@ -625,7 +633,7 @@ emit_ldrh (guint8 *code, int rt, int rn, int imm)
 	return code;
 }
 
-static __attribute__ ((__warn_unused_result__)) guint8*
+static CHECK_RETURN guint8*
 emit_ldrshx (guint8 *code, int rt, int rn, int imm)
 {
 	if (arm_is_pimm12_scaled (imm, 2)) {
@@ -639,7 +647,7 @@ emit_ldrshx (guint8 *code, int rt, int rn, int imm)
 	return code;
 }
 
-static __attribute__ ((__warn_unused_result__)) guint8*
+static CHECK_RETURN guint8*
 emit_ldrswx (guint8 *code, int rt, int rn, int imm)
 {
 	if (arm_is_pimm12_scaled (imm, 4)) {
@@ -653,7 +661,7 @@ emit_ldrswx (guint8 *code, int rt, int rn, int imm)
 	return code;
 }
 
-static __attribute__ ((__warn_unused_result__)) guint8*
+static CHECK_RETURN guint8*
 emit_ldrw (guint8 *code, int rt, int rn, int imm)
 {
 	if (arm_is_pimm12_scaled (imm, 4)) {
@@ -666,7 +674,7 @@ emit_ldrw (guint8 *code, int rt, int rn, int imm)
 	return code;
 }
 
-static __attribute__ ((__warn_unused_result__)) guint8*
+static CHECK_RETURN guint8*
 emit_ldrx (guint8 *code, int rt, int rn, int imm)
 {
 	if (arm_is_pimm12_scaled (imm, 8)) {
@@ -679,7 +687,7 @@ emit_ldrx (guint8 *code, int rt, int rn, int imm)
 	return code;
 }
 
-static __attribute__ ((__warn_unused_result__)) guint8*
+static CHECK_RETURN guint8*
 emit_ldrfpw (guint8 *code, int rt, int rn, int imm)
 {
 	if (arm_is_pimm12_scaled (imm, 4)) {
@@ -693,7 +701,7 @@ emit_ldrfpw (guint8 *code, int rt, int rn, int imm)
 	return code;
 }
 
-static __attribute__ ((__warn_unused_result__)) guint8*
+static CHECK_RETURN guint8*
 emit_ldrfpx (guint8 *code, int rt, int rn, int imm)
 {
 	if (arm_is_pimm12_scaled (imm, 8)) {
@@ -803,7 +811,7 @@ emit_tls_set (guint8 *code, int sreg, int tls_offset)
  * - ldrp [fp, lr], [sp], !stack_offfset
  * Clobbers TEMP_REGS.
  */
-__attribute__ ((__warn_unused_result__)) guint8*
+CHECK_RETURN guint8*
 mono_arm_emit_destroy_frame (guint8 *code, int stack_offset, guint64 temp_regs)
 {
 	// At least one of these registers must be available, or both.
@@ -2040,6 +2048,11 @@ mono_arch_flush_icache (guint8 *code, gint size)
 #ifndef MONO_CROSS_COMPILE
 #if __APPLE__
 	sys_icache_invalidate (code, size);
+#elif HOST_WIN32
+	// tdelort : 
+	// custom implementation to flush the instruction cache using MSVC that does not support inline asm
+	HANDLE current_proc = GetCurrentProcess();
+	FlushInstructionCache(current_proc ,code, size);
 #else
 	/* Don't rely on GCC's __clear_cache implementation, as it caches
 	 * icache/dcache cache line sizes, that can vary between cores on
@@ -3123,7 +3136,7 @@ opcode_to_armcond (int opcode)
 }
 
 /* This clobbers LR */
-static __attribute__ ((__warn_unused_result__)) guint8*
+static CHECK_RETURN guint8*
 emit_cond_exc (MonoCompile *cfg, guint8 *code, int opcode, const char *exc_name)
 {
 	int cond;
@@ -4865,7 +4878,7 @@ emit_move_args (MonoCompile *cfg, guint8 *code)
  *   Emit code to store the registers in REGS into the appropriate elements of
  * the register array at BASEREG+OFFSET.
  */
-static __attribute__ ((__warn_unused_result__)) guint8*
+static CHECK_RETURN guint8*
 emit_store_regarray (guint8 *code, guint64 regs, int basereg, int offset)
 {
 	int i;
@@ -4892,7 +4905,7 @@ emit_store_regarray (guint8 *code, guint64 regs, int basereg, int offset)
  *   Emit code to load the registers in REGS from the appropriate elements of
  * the register array at BASEREG+OFFSET.
  */
-static __attribute__ ((__warn_unused_result__)) guint8*
+static CHECK_RETURN guint8*
 emit_load_regarray (guint8 *code, guint64 regs, int basereg, int offset)
 {
 	int i;
@@ -4923,7 +4936,7 @@ emit_load_regarray (guint8 *code, guint64 regs, int basereg, int offset)
  *   Emit code to store the registers in REGS into consecutive memory locations starting
  * at BASEREG+OFFSET.
  */
-static __attribute__ ((__warn_unused_result__)) guint8*
+static CHECK_RETURN guint8*
 emit_store_regset (guint8 *code, guint64 regs, int basereg, int offset)
 {
 	int i, pos;
@@ -4953,7 +4966,7 @@ emit_store_regset (guint8 *code, guint64 regs, int basereg, int offset)
  *   Emit code to load the registers in REGS from consecutive memory locations starting
  * at BASEREG+OFFSET.
  */
-static __attribute__ ((__warn_unused_result__)) guint8*
+static CHECK_RETURN guint8*
 emit_load_regset (guint8 *code, guint64 regs, int basereg, int offset)
 {
 	int i, pos;
@@ -4976,19 +4989,19 @@ emit_load_regset (guint8 *code, guint64 regs, int basereg, int offset)
 	return code;
 }
 
-__attribute__ ((__warn_unused_result__)) guint8*
+CHECK_RETURN guint8*
 mono_arm_emit_load_regarray (guint8 *code, guint64 regs, int basereg, int offset)
 {
 	return emit_load_regarray (code, regs, basereg, offset);
 }
 
-__attribute__ ((__warn_unused_result__)) guint8*
+CHECK_RETURN guint8*
 mono_arm_emit_store_regarray (guint8 *code, guint64 regs, int basereg, int offset)
 {
 	return emit_store_regarray (code, regs, basereg, offset);
 }
 
-__attribute__ ((__warn_unused_result__)) guint8*
+CHECK_RETURN guint8*
 mono_arm_emit_store_regset (guint8 *code, guint64 regs, int basereg, int offset)
 {
 	return emit_store_regset (code, regs, basereg, offset);
@@ -4996,7 +5009,7 @@ mono_arm_emit_store_regset (guint8 *code, guint64 regs, int basereg, int offset)
 
 /* Same as emit_store_regset, but emit unwind info too */
 /* CFA_OFFSET is the offset between the CFA and basereg */
-static __attribute__ ((__warn_unused_result__)) guint8*
+static CHECK_RETURN guint8*
 emit_store_regset_cfa (MonoCompile *cfg, guint8 *code, guint64 regs, int basereg, int offset, int cfa_offset, guint64 no_cfa_regset)
 {
 	int i, j, pos, nregs;

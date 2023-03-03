@@ -129,7 +129,16 @@ mono_create_static_rgctx_trampoline (MonoMethod *m, gpointer addr)
 	if (mono_aot_only)
 		res = mono_aot_get_static_rgctx_trampoline (ctx, addr);
 	else
+	{
+#if HOST_UWP // tdelort : see WSA/README.md
+		HFMonoPageProtectionMode old_protect;
+		mono_set_execute_mode(HF_READWRITE, &old_protect, "mini-trampolines.c:mono_create_static_rgctx_trampoline");
 		res = mono_arch_get_static_rgctx_trampoline (mem_manager, ctx, addr);
+		mono_set_execute_mode(old_protect, NULL, "mini-trampolines.c:mono_create_static_rgctx_trampoline");
+#else
+		res = mono_arch_get_static_rgctx_trampoline (mem_manager, ctx, addr);
+#endif
+	}
 
 	mono_domain_lock (domain);
 	/* Duplicates inserted while we didn't hold the lock are OK */
@@ -171,7 +180,14 @@ mono_create_ftnptr_arg_trampoline (gpointer arg, gpointer addr)
 	if (mono_aot_only) {
 		res = mono_aot_get_static_rgctx_trampoline (arg, addr);
 	} else {
+#if HOST_UWP // tdelort : see WSA/README.md
+		HFMonoPageProtectionMode old_protect;
+		mono_set_execute_mode(HF_READWRITE, &old_protect, "mini-trampolines.c:mono_create_ftnptr_arg_trampoline");
 		res = mono_arch_get_static_rgctx_trampoline (mem_manager, arg, addr);
+		mono_set_execute_mode(old_protect, NULL, "mini-trampolines.c:mono_create_ftnptr_arg_trampoline");
+#else
+		res = mono_arch_get_static_rgctx_trampoline (mem_manager, arg, addr);
+#endif
 	}
 #endif
 
@@ -380,6 +396,14 @@ mini_add_method_trampoline (MonoMethod *m, gpointer compiled_method, gboolean ad
 			addr = mono_aot_get_unbox_trampoline (m, addr);
 		} else {
 			unbox_trampolines ++;
+#if HOST_UWP // tdelort : see WSA/README.md
+			HFMonoPageProtectionMode old_protect;
+			mono_set_execute_mode(HF_READWRITE, &old_protect, "mini-trampolines.c:mini_add_method_trampoline");
+			addr = mono_arch_get_unbox_trampoline (m, addr);
+			mono_set_execute_mode(old_protect, NULL, "mini-trampolines.c:mini_add_method_trampoline");
+#else
+			addr = mono_arch_get_unbox_trampoline (m, addr);
+#endif
 			addr = mono_arch_get_unbox_trampoline (m, addr);
 		}
 	}
@@ -752,8 +776,22 @@ common_call_trampoline (host_mgreg_t *regs, guint8 *code, MonoMethod *m, MonoVTa
 			/* LLVM code doesn't make direct calls */
 			if (ji && ji->from_llvm)
 				no_patch = TRUE;
-			if (!no_patch && mono_method_same_domain (ji, target_ji))
+			if (!no_patch && mono_method_same_domain(ji, target_ji))
+			{
+#if HOST_UWP // tdelort : see WSA/README.md
+				int old_protect, dummy;
+				// TODO : protect everything
+				//HFMonoPageProtectionMode old_protect;
+				//mono_set_execute_mode(HF_READWRITE, &old_protect, "mini-trampolines.c:common_call_trampoline");
+				mono_virtual_protect(ji->code_start, PAGE_READWRITE, &old_protect, "mini-trampolines.c:common_call_trampoline");
 				mono_arch_patch_callsite ((guint8 *)ji->code_start, code, (guint8 *)addr);
+				mono_virtual_protect(ji->code_start, old_protect, &dummy, "mini-trampolines.c:common_call_trampoline");
+				//mono_set_execute_mode(old_protect, NULL, "mini-trampolines.c:common_call_trampoline");
+#else
+				mono_arch_patch_callsite ((guint8 *)ji->code_start, code, (guint8 *)addr);
+#endif
+
+			}
 		}
 	}
 
@@ -860,7 +898,15 @@ mono_vcall_trampoline (host_mgreg_t *regs, guint8 *code, int slot, guint8 *tramp
 		m = NULL;
 	}
 
+#if HOST_UWP // tdelort : see WSA/README.md
+	HFMonoPageProtectionMode old_protect;
+	mono_set_execute_mode(HF_READWRITE, &old_protect, "mini-trampolines.c:mono_vcall_trampolines");
 	res = common_call_trampoline (regs, code, m, vt, vtable_slot, error);
+	mono_set_execute_mode(old_protect, NULL, "mini-trampolines.c:mono_vcall_trampolines");
+#else
+	res = common_call_trampoline (regs, code, m, vt, vtable_slot, error);
+#endif
+
 leave:
 	if (!is_ok (error)) {
 		mono_error_set_pending_exception (error);
@@ -1271,7 +1317,14 @@ create_trampoline_code (MonoTrampolineType tramp_type)
 	MonoTrampInfo *info;
 	guchar *code;
 
+#if HOST_UWP // tdelort : see WSA/README.md
+	HFMonoPageProtectionMode old_protect;
+	mono_set_execute_mode(HF_READWRITE, &old_protect, "mini-trampolines.c:create_trampoline_code");
 	code = mono_arch_create_generic_trampoline (tramp_type, &info, FALSE);
+	mono_set_execute_mode(old_protect, NULL, "mini-trampolines.c:create_trampoline_code");
+#else
+	code = mono_arch_create_generic_trampoline (tramp_type, &info, FALSE);
+#endif
 	mono_tramp_info_register (info, NULL);
 
 	return code;
@@ -1336,7 +1389,16 @@ mono_create_specific_trampoline (gpointer arg1, MonoTrampolineType tramp_type, M
 	if (mono_aot_only)
 		code = mono_aot_create_specific_trampoline (arg1, tramp_type, domain, &len);
 	else
+	{
+#if HOST_UWP //tdelort : see WSA/README.md
+		HFMonoPageProtectionMode old_protect;
+		mono_set_execute_mode(HF_READWRITE, &old_protect, "mini-trampolines.c:mono_create_specific_trampoline");
 		code = mono_arch_create_specific_trampoline (arg1, tramp_type, mem_manager, &len);
+		mono_set_execute_mode(old_protect, NULL, "mini-trampolines.c:mono_create_specific_trampoline");
+#else
+		code = mono_arch_create_specific_trampoline (arg1, tramp_type, mem_manager, &len);
+#endif
+	}
 	mono_lldb_save_specific_trampoline_info (arg1, tramp_type, domain, code, len);
 	if (code_len)
 		*code_len = len;
@@ -1504,8 +1566,17 @@ mono_create_delegate_trampoline_info (MonoDomain *domain, MonoClass *klass, Mono
 	tramp_info = (MonoDelegateTrampInfo *)mono_domain_alloc0 (domain, sizeof (MonoDelegateTrampInfo));
 	tramp_info->invoke = invoke;
 	tramp_info->invoke_sig = mono_method_signature_internal (invoke);
+
+#if HOST_UWP // tdelort : see WSA/README.md
+	HFMonoPageProtectionMode old_protect;
+	mono_set_execute_mode(HF_READWRITE, &old_protect, "mini-trampolines.c:mono_create_delegate_trampoline_info");
 	tramp_info->impl_this = mono_arch_get_delegate_invoke_impl (mono_method_signature_internal (invoke), TRUE);
 	tramp_info->impl_nothis = mono_arch_get_delegate_invoke_impl (mono_method_signature_internal (invoke), FALSE);
+	mono_set_execute_mode(old_protect, NULL, "mini-trampolines.c:mono_create_delegate_trampoline_info");
+#else
+	tramp_info->impl_this = mono_arch_get_delegate_invoke_impl (mono_method_signature_internal (invoke), TRUE);
+	tramp_info->impl_nothis = mono_arch_get_delegate_invoke_impl (mono_method_signature_internal (invoke), FALSE);
+#endif
 	tramp_info->method = method;
 	if (method) {
 		error_init (error);
@@ -1568,7 +1639,15 @@ mono_create_rgctx_lazy_fetch_trampoline (guint32 offset)
 	if (mono_aot_only) {
 		ptr = mono_aot_get_lazy_fetch_trampoline (offset);
 	} else {
+#if HOST_UWP // tdelort : see WSA/README.md
+		HFMonoPageProtectionMode old_protect;
+		mono_set_execute_mode(HF_READWRITE, &old_protect, "mini-trampolines.c:mono_create_rgctx_lazy_fetch_trampoline");
 		tramp = mono_arch_create_rgctx_lazy_fetch_trampoline (offset, &info, FALSE);
+		mono_set_execute_mode(old_protect, NULL, "mini-trampolines.c:mono_create_rgctx_lazy_fetch_trampoline");
+#else
+		tramp = mono_arch_create_rgctx_lazy_fetch_trampoline (offset, &info, FALSE);
+#endif
+
 		mono_tramp_info_register (info, NULL);
 		ptr = mono_create_ftnptr (mono_get_root_domain (), tramp);
 	}
@@ -1674,7 +1753,14 @@ mini_get_single_step_trampoline (void)
 		} else {
 #ifdef MONO_ARCH_HAVE_SDB_TRAMPOLINES
 			MonoTrampInfo *info;
+#if HOST_UWP // tdelort : see WSA/README.md
+			HFMonoPageProtectionMode old_protect;
+			mono_set_execute_mode(HF_READWRITE, &old_protect, "mini-trampolines.c:mini_get_single_step_trampoline");
 			tramp = mono_arch_create_sdb_trampoline (TRUE, &info, FALSE);
+			mono_set_execute_mode(old_protect, NULL, "mini-trampolines.c:mini_get_single_step_trampoline");
+#else
+			tramp = mono_arch_create_sdb_trampoline (TRUE, &info, FALSE);
+#endif
 			mono_tramp_info_register (info, NULL);
 #else
 			tramp = NULL;
@@ -1706,7 +1792,14 @@ mini_get_breakpoint_trampoline (void)
 		} else {
 #ifdef MONO_ARCH_HAVE_SDB_TRAMPOLINES
 			MonoTrampInfo *info;
+#if HOST_UWP // tdelort : see WSA/README.md
+			HFMonoPageProtectionMode old_protect;
+			mono_set_execute_mode(HF_READWRITE, &old_protect, "mini-trampolines.c:mini_get_breakpoint_trampoline");
 			tramp = mono_arch_create_sdb_trampoline (FALSE, &info, FALSE);
+			mono_set_execute_mode(old_protect, NULL, "mini-trampolines.c:mini_get_breakpoint_trampoline");
+#else
+			tramp = mono_arch_create_sdb_trampoline (FALSE, &info, FALSE);
+#endif
 			mono_tramp_info_register (info, NULL);
 #else
 			tramp = NULL;

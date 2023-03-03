@@ -226,6 +226,9 @@ mono_exceptions_init (void)
 	} else if (!mono_llvm_only) {
 		MonoTrampInfo *info;
 
+#if HOST_UWP // tdelort : see WSA/README.md
+		HFMonoPageProtectionMode old_protect;
+		mono_set_execute_mode(HF_READWRITE, &old_protect, "mini-exceptions.c:mono_exceptions_init");
 		restore_context_func = mono_arch_get_restore_context (&info, FALSE);
 		mono_tramp_info_register (info, NULL);
 		call_filter_func = mono_arch_get_call_filter (&info, FALSE);
@@ -236,9 +239,29 @@ mono_exceptions_init (void)
 		mono_tramp_info_register (info, NULL);
 		rethrow_preserve_exception_func = mono_arch_get_rethrow_preserve_exception (&info, FALSE);
 		mono_tramp_info_register (info, NULL);
+		mono_set_execute_mode(old_protect, NULL, "mini-exceptions.c:mono_exceptions_init");
+#else
+		restore_context_func = mono_arch_get_restore_context (&info, FALSE);
+		mono_tramp_info_register (info, NULL);
+		call_filter_func = mono_arch_get_call_filter (&info, FALSE);
+		mono_tramp_info_register (info, NULL);
+		throw_exception_func = mono_arch_get_throw_exception (&info, FALSE);
+		mono_tramp_info_register (info, NULL);
+		rethrow_exception_func = mono_arch_get_rethrow_exception (&info, FALSE);
+		mono_tramp_info_register (info, NULL);
+		rethrow_preserve_exception_func = mono_arch_get_rethrow_preserve_exception (&info, FALSE);
+		mono_tramp_info_register (info, NULL);
+#endif
 	}
 
+#if HOST_UWP // tdelort : see WSA/README.md
+	HFMonoPageProtectionMode old_protect;
+	mono_set_execute_mode(HF_READWRITE, &old_protect, "mini-exceptions.c:mono_exceptions_init");
 	mono_arch_exceptions_init ();
+	mono_set_execute_mode(old_protect, NULL, "mini-exceptions.c:mono_exceptions_init");
+#else
+	mono_arch_exceptions_init ();
+#endif
 
 	cbs.mono_walk_stack_with_ctx = mono_runtime_walk_stack_with_ctx;
 	cbs.mono_walk_stack_with_state = mono_walk_stack_with_state;
@@ -322,7 +345,14 @@ mono_get_throw_corlib_exception (void)
 	if (mono_ee_features.use_aot_trampolines)
 		code = mono_aot_get_trampoline ("throw_corlib_exception");
 	else {
+#if HOST_UWP // tdelort : see WSA/README.md
+		HFMonoPageProtectionMode old_protect;
+		mono_set_execute_mode(HF_READWRITE, &old_protect, "mini-exceptions.c:mono_get_throw_corlib_exception");
 		code = mono_arch_get_throw_corlib_exception (&info, FALSE);
+		mono_set_execute_mode(old_protect, NULL, "mini-exceptions.c:mono_get_throw_corlib_exception");
+#else
+		code = mono_arch_get_throw_corlib_exception (&info, FALSE);
+#endif
 		mono_tramp_info_register (info, NULL);
 	}
 
@@ -734,8 +764,12 @@ unwinder_init (Unwinder *unwinder)
 }
 
 #if defined(__GNUC__) && defined(TARGET_ARM64)
+#if defined(__clang__)
+static __attribute__((optnone)) gboolean
+#else
 /* gcc 4.9.2 seems to miscompile this on arm64 */
 static __attribute__((optimize("O0"))) gboolean
+#endif
 #else
 static gboolean
 #endif

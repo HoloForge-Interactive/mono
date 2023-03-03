@@ -569,7 +569,10 @@ mono_tramp_info_register_internal (MonoTrampInfo *info, MonoDomain *domain, gboo
 
 #ifdef MONO_ARCH_HAVE_UNWIND_TABLE
 	if (!aot)
-		mono_arch_unwindinfo_install_tramp_unwind_info (info->unwind_ops, info->code, info->code_size);
+	{
+		int old_protect, dummy;
+		mono_arch_unwindinfo_install_tramp_unwind_info(info->unwind_ops, info->code, info->code_size);
+	}
 #endif
 
 	if (!domain) {
@@ -2522,7 +2525,17 @@ compile_special (MonoMethod *method, MonoDomain *target_domain, MonoError *error
 			if (mono_ee_features.use_aot_trampolines)
 				mono_aot_get_trampoline_full (is_in ? "gsharedvt_trampoline" : "gsharedvt_out_trampoline", &tinfo);
 			else
-				mono_arch_get_gsharedvt_trampoline (&tinfo, FALSE);
+			{
+
+#if HOST_UWP // tdelort : see WSA/README.md
+				HFMonoPageProtectionMode old_protect;
+				mono_set_execute_mode(HF_READWRITE, &old_protect, "mini-runtime.c:compile_special");
+				mono_arch_get_gsharedvt_trampoline(&tinfo, FALSE);
+				mono_set_execute_mode(old_protect, NULL, "mini-runtime.c:compile_special");
+#else
+				mono_arch_get_gsharedvt_trampoline(&tinfo, FALSE);
+#endif
+			}
 			jinfo = create_jit_info_for_trampoline (method, tinfo);
 			mono_jit_info_table_add (mono_get_root_domain (), jinfo);
 			if (is_in)
@@ -3010,6 +3023,36 @@ typedef struct {
 	gpointer *wrapper_arg;
 } RuntimeInvokeInfo;
 
+#ifdef HOST_UWP
+void print_runtime_invoke_info(RuntimeInvokeInfo* info)
+{
+	g_printerr("RuntimeInvokeInfo :\n\tmethod %p\n:\tcompiled_method %p\n\truntime_invoke %p\n\tvtable %p\n\tdyn_call_info %p\n\tret_box_class %p\n\tsig %p\n\tgsharedvt_invoke %d\n\tuse_interp %p\n\twrapper_arg %p",
+		info->method, info->compiled_method, info->runtime_invoke, info->vtable, info->dyn_call_info, info->ret_box_class, info->sig, info->gsharedvt_invoke, info->use_interp, info->wrapper_arg);
+}
+#endif
+
+char* hf_mono_string_to_charp(MonoString* monoString)
+{
+	ERROR_DECL (error);
+	char* str = mono_string_to_utf8_checked_internal(monoString, error);
+	if (!is_ok (error)) {
+		mono_error_cleanup (error);
+		str = "NULL";
+	}
+	return str;
+}
+
+void hf_print_mono_exception(MonoException* exc)
+{
+	g_printerr("Exception caught in mono code :");
+	char* message = hf_mono_string_to_charp(exc->message);
+	char* klass_name = exc->object.vtable->klass->name;
+	char *stack_trace = mono_exception_get_managed_backtrace (exc);
+	g_printerr("%s : %s\n%s", klass_name, message, stack_trace);
+	g_free(message);
+	g_free(stack_trace);
+}
+
 static RuntimeInvokeInfo*
 create_runtime_invoke_info (MonoDomain *domain, MonoMethod *method, gpointer compiled_method, gboolean callee_gsharedvt, gboolean use_interp, MonoError *error)
 {
@@ -3452,9 +3495,23 @@ mono_jit_runtime_invoke (MonoMethod *method, void *obj, void **params, MonoObjec
 	} else {
 		runtime_invoke = (MonoObject *(*)(MonoObject *, void **, MonoObject **, void *))info->runtime_invoke;
 
+#if HOST_UWP // tdelort : see WSA/README.md
+		HFMonoPageProtectionMode old_protect;
+		mono_set_execute_mode(HF_EXECUTE_READ, &old_protect, "mini-runtime.c:mono_jit_runtime_invoke");
 		result = runtime_invoke ((MonoObject *)obj, params, exc, info->compiled_method);
+		mono_set_execute_mode(old_protect, NULL, "mini-runtime.c:mono_jit_runtime_invoke");
+#else
+		result = runtime_invoke ((MonoObject *)obj, params, exc, info->compiled_method);
+#endif
+
+		// printing content exception
+		if (exc != NULL && *exc != NULL)
+		{
+			hf_print_mono_exception((MonoException*)(*exc));
+		}
 	}
 	if (catchExcInMonoError && *exc != NULL) {
+		g_printerr("Exception caught in unmanaged code");
 		((MonoException *)(*exc))->caught_in_unmanaged = TRUE;
 		mono_error_set_exception_instance (error, (MonoException*) *exc);
 	}
@@ -3511,8 +3568,8 @@ MONO_SIG_HANDLER_FUNC (, mono_crashing_signal_handler)
 	MONO_SIG_HANDLER_INFO_TYPE *info = MONO_SIG_HANDLER_GET_INFO ();
 	MONO_SIG_HANDLER_GET_CONTEXT;
 
-	if (mono_runtime_get_no_exec ())
-		exit (1);
+	if (mono_runtime_get_no_exec())
+		exit(1);
 
 	mono_sigctx_to_monoctx (ctx, &mctx);
 	if (mono_dump_start ())
@@ -4365,7 +4422,6 @@ mini_init (const char *filename, const char *runtime_version)
 {
 	ERROR_DECL (error);
 	MonoDomain *domain;
-
 	MonoRuntimeCallbacks callbacks;
 
 	static const MonoThreadInfoRuntimeCallbacks ticallbacks = {
@@ -4397,6 +4453,11 @@ mini_init (const char *filename, const char *runtime_version)
 		mono_ee_interp_init (mono_interp_opts_string);
 #endif
 
+	//g_printerr("sizeof(int) = %d", sizeof(int));
+	//g_printerr("sizeof(long) = %d", sizeof(long));
+	//g_printerr("sizeof(long long) = %d", sizeof(long long));
+	//g_printerr("sizeof(void *) = %d", sizeof(void *));
+	//g_printerr("sizeof(size_t) = %d", sizeof(size_t));
 	mono_os_mutex_init_recursive (&jit_mutex);
 
 	mono_cross_helpers_run ();
@@ -4675,7 +4736,7 @@ mini_init (const char *filename, const char *runtime_version)
 	MONO_PROFILER_RAISE (runtime_initialized, ());
 
 	MONO_VES_INIT_END ();
-
+	
 	return domain;
 }
 
