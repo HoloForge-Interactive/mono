@@ -9269,6 +9269,29 @@ mono_array_addr_with_size (MonoArray *array, int size, uintptr_t idx)
 	MONO_EXTERNAL_ONLY (char*, mono_array_addr_with_size_internal (array, size, idx));
 }
 
+// HoloForge wrappers
+void* 
+mono_array_get(MonoArray* array, int size, uintptr_t index)
+{
+	return mono_array_addr_with_size(array, size, index);
+}
+
+void 
+mono_array_set(MonoArray* array, int size, uintptr_t index, void *data)
+{
+	void* ptr = mono_array_addr_with_size(array, size, index);
+	memcpy(ptr, data, size);
+}
+
+void mono_array_setref(MonoArray* array, uintptr_t index, MonoObject* data)
+{
+	void** ptr = (void*)mono_array_addr_with_size(array, sizeof(void*), index);
+	mono_gc_wbarrier_set_arrayref(array, ptr, data);
+}
+
+// End of HoloForge wrappers
+
+
 MonoArray *
 mono_glist_to_array (GList *list, MonoClass *eclass, MonoError *error)
 {

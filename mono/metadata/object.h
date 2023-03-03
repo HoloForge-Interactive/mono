@@ -48,24 +48,35 @@ typedef void	    (*MonoMainThreadFunc)    (void* user_data);
     } while (0)
 
 #define mono_array_addr(array,type,index) ((type*)mono_array_addr_with_size ((array), sizeof (type), (index)))
-#define mono_array_get(array,type,index) ( *(type*)mono_array_addr ((array), type, (index)) ) 
-#define mono_array_set(array,type,index,value)	\
-	do {	\
-		type *__p = (type *) mono_array_addr ((array), type, (index));	\
-		*__p = (value);	\
-	} while (0)
-#define mono_array_setref(array,index,value)	\
-	do {	\
-		void **__p = (void **) mono_array_addr ((array), void*, (index));	\
-		mono_gc_wbarrier_set_arrayref ((array), __p, (MonoObject*)(value));	\
-		/* *__p = (value);*/	\
-	} while (0)
-#define mono_array_memcpy_refs(dest,destidx,src,srcidx,count)	\
-	do {	\
-		void **__p = (void **) mono_array_addr ((dest), void*, (destidx));	\
-		void **__s = mono_array_addr ((src), void*, (srcidx));	\
-		mono_gc_wbarrier_arrayref_copy (__p, __s, (count));	\
-	} while (0)
+//#define mono_array_get(array,type,index) ( *(type*)mono_array_addr ((array), type, (index)) ) 
+//#define mono_array_set(array,type,index,value)	\
+//	do {	\
+//		type *__p = (type *) mono_array_addr ((array), type, (index));	\
+//		*__p = (value);	\
+//	} while (0)
+//#define mono_array_setref(array,index,value)	\
+//	do {	\
+//		void **__p = (void **) mono_array_addr ((array), void*, (index));	\
+//		mono_gc_wbarrier_set_arrayref ((array), __p, (MonoObject*)(value));	\
+//		/* *__p = (value);*/	\
+//	} while (0)
+//#define mono_array_memcpy_refs(dest,destidx,src,srcidx,count)	\
+//	do {	\
+//		void **__p = (void **) mono_array_addr ((dest), void*, (destidx));	\
+//		void **__s = mono_array_addr ((src), void*, (srcidx));	\
+//		mono_gc_wbarrier_arrayref_copy (__p, __s, (count));	\
+//	} while (0)
+
+// HoloForge wrappers
+MONO_API MONO_RT_EXTERNAL_ONLY void* 
+mono_array_get(MonoArray* array, int size, uintptr_t index);
+
+MONO_API MONO_RT_EXTERNAL_ONLY void 
+mono_array_set(MonoArray* array, int size, uintptr_t index, void *data);
+
+MONO_API MONO_RT_EXTERNAL_ONLY void 
+mono_array_setref(MonoArray* array, uintptr_t index, MonoObject *data);
+// End of HoloForge wrappers
 
 MONO_API MONO_RT_EXTERNAL_ONLY mono_unichar2 *mono_string_chars  (MonoString *s);
 MONO_API MONO_RT_EXTERNAL_ONLY int            mono_string_length (MonoString *s);

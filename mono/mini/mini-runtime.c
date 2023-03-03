@@ -3029,6 +3029,7 @@ void print_runtime_invoke_info(RuntimeInvokeInfo* info)
 	g_printerr("RuntimeInvokeInfo :\n\tmethod %p\n:\tcompiled_method %p\n\truntime_invoke %p\n\tvtable %p\n\tdyn_call_info %p\n\tret_box_class %p\n\tsig %p\n\tgsharedvt_invoke %d\n\tuse_interp %p\n\twrapper_arg %p",
 		info->method, info->compiled_method, info->runtime_invoke, info->vtable, info->dyn_call_info, info->ret_box_class, info->sig, info->gsharedvt_invoke, info->use_interp, info->wrapper_arg);
 }
+#endif
 
 char* hf_mono_string_to_charp(MonoString* monoString)
 {
@@ -3051,7 +3052,6 @@ void hf_print_mono_exception(MonoException* exc)
 	g_free(message);
 	g_free(stack_trace);
 }
-#endif
 
 static RuntimeInvokeInfo*
 create_runtime_invoke_info (MonoDomain *domain, MonoMethod *method, gpointer compiled_method, gboolean callee_gsharedvt, gboolean use_interp, MonoError *error)
@@ -3500,15 +3500,15 @@ mono_jit_runtime_invoke (MonoMethod *method, void *obj, void **params, MonoObjec
 		mono_set_execute_mode(HF_EXECUTE_READ, &old_protect, "mini-runtime.c:mono_jit_runtime_invoke");
 		result = runtime_invoke ((MonoObject *)obj, params, exc, info->compiled_method);
 		mono_set_execute_mode(old_protect, NULL, "mini-runtime.c:mono_jit_runtime_invoke");
+#else
+		result = runtime_invoke ((MonoObject *)obj, params, exc, info->compiled_method);
+#endif
 
 		// printing content exception
 		if (exc != NULL && *exc != NULL)
 		{
 			hf_print_mono_exception((MonoException*)(*exc));
 		}
-#else
-		result = runtime_invoke ((MonoObject *)obj, params, exc, info->compiled_method);
-#endif
 	}
 	if (catchExcInMonoError && *exc != NULL) {
 		g_printerr("Exception caught in unmanaged code");
